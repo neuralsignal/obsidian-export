@@ -64,11 +64,31 @@ def _truncate_title(title: str) -> str:
     return title
 
 
+def _escape_latex(text: str) -> str:
+    """Escape LaTeX special characters in plain text for safe preamble insertion."""
+    # Order matters: & must come before others that might produce &
+    replacements = [
+        ("\\", "\\textbackslash{}"),
+        ("&", "\\&"),
+        ("%", "\\%"),
+        ("$", "\\$"),
+        ("#", "\\#"),
+        ("_", "\\_"),
+        ("{", "\\{"),
+        ("}", "\\}"),
+        ("~", "\\textasciitilde{}"),
+        ("^", "\\textasciicircum{}"),
+    ]
+    for char, escaped in replacements:
+        text = text.replace(char, escaped)
+    return text
+
+
 def _substitute_placeholders(value: str, title: str, logo_path: str) -> str:
     """Replace {doc_title} and {logo_path} in a header/footer config string."""
     if not value:
         return value
-    short_title = _truncate_title(title)
+    short_title = _escape_latex(_truncate_title(title))
     return value.replace("{doc_title}", short_title).replace("{logo_path}", logo_path)
 
 

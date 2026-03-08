@@ -9,6 +9,7 @@ from obsidian_export.pipeline.latex_header import (
     _build_font_block,
     _build_header_footer_block,
     _build_line_spacing_block,
+    _escape_latex,
     _substitute_placeholders,
     _truncate_title,
     render_header,
@@ -175,6 +176,42 @@ class TestTruncateTitle:
         assert _truncate_title("") == ""
 
 
+class TestEscapeLatex:
+    def test_plain_text_unchanged(self) -> None:
+        assert _escape_latex("Hello World") == "Hello World"
+
+    def test_underscores_escaped(self) -> None:
+        assert _escape_latex("my_file_name") == "my\\_file\\_name"
+
+    def test_dollar_escaped(self) -> None:
+        assert _escape_latex("costs $50") == "costs \\$50"
+
+    def test_ampersand_escaped(self) -> None:
+        assert _escape_latex("A & B") == "A \\& B"
+
+    def test_percent_escaped(self) -> None:
+        assert _escape_latex("100%") == "100\\%"
+
+    def test_hash_escaped(self) -> None:
+        assert _escape_latex("item #1") == "item \\#1"
+
+    def test_multiple_special_chars(self) -> None:
+        result = _escape_latex("file_name $100 & 50%")
+        assert "\\_" in result
+        assert "\\$" in result
+        assert "\\&" in result
+        assert "\\%" in result
+
+    def test_empty_string(self) -> None:
+        assert _escape_latex("") == ""
+
+    def test_tilde_escaped(self) -> None:
+        assert _escape_latex("~") == "\\textasciitilde{}"
+
+    def test_caret_escaped(self) -> None:
+        assert _escape_latex("^") == "\\textasciicircum{}"
+
+
 class TestSubstitutePlaceholders:
     def test_empty_string_unchanged(self) -> None:
         assert _substitute_placeholders("", "My Title", "/path/logo.png") == ""
@@ -190,6 +227,16 @@ class TestSubstitutePlaceholders:
     def test_both_replaced(self) -> None:
         result = _substitute_placeholders("{doc_title} {logo_path}", "Title", "/logo.png")
         assert result == "Title /logo.png"
+
+    def test_title_with_underscores_escaped(self) -> None:
+        result = _substitute_placeholders("\\sffamily {doc_title}", "my_file_name", "/x")
+        assert result == "\\sffamily my\\_file\\_name"
+
+    def test_title_with_special_chars_escaped(self) -> None:
+        result = _substitute_placeholders("{doc_title}", "costs $50 & 100%", "/x")
+        assert "\\$" in result
+        assert "\\&" in result
+        assert "\\%" in result
 
     def test_no_placeholders_unchanged(self) -> None:
         result = _substitute_placeholders("\\thepage", "Title", "/logo.png")

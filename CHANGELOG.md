@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1 (2026-03-08)
+
+- Fix: escape LaTeX special characters (`_`, `$`, `&`, `%`, `#`, etc.) in document titles injected into header/footer preamble blocks — prevents "Missing $ inserted" errors when filenames contain underscores
+
 ## 0.1.0 (2026-03-08)
 
 Initial release.
