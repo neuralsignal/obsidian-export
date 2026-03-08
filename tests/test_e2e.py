@@ -54,9 +54,14 @@ def _make_full_pipeline_config() -> ConvertConfig:
         if local_mmdc.exists():
             mmdc_path = str(local_mmdc)
     if mmdc_path is not None:
+        puppeteer_cfg = Path(__file__).parent.parent / "obsidian_export" / "defaults" / "puppeteer-config.json"
         cfg = dataclasses.replace(
             cfg,
-            mermaid=dataclasses.replace(cfg.mermaid, mmdc_bin=Path(mmdc_path)),
+            mermaid=dataclasses.replace(
+                cfg.mermaid,
+                mmdc_bin=Path(mmdc_path),
+                puppeteer_config=puppeteer_cfg if puppeteer_cfg.exists() else None,
+            ),
         )
     return cfg
 

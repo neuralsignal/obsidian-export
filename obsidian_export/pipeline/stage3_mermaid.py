@@ -32,21 +32,25 @@ def render_mermaid_blocks(body: str, config: MermaidConfig, tmpdir: Path) -> str
         out_file = tmpdir / f"diagram_{counter}.png"
         src_file.write_text(diagram_src, encoding="utf-8")
 
-        subprocess.run(
-            [
-                str(mmdc),
-                "--input",
-                str(src_file),
-                "--output",
-                str(out_file),
-                "--scale",
-                str(config.scale),
-                "--backgroundColor",
-                "transparent",
-            ],
-            check=True,
-            capture_output=True,
-        )
+        cmd = [
+            str(mmdc),
+            "--input",
+            str(src_file),
+            "--output",
+            str(out_file),
+            "--scale",
+            str(config.scale),
+            "--backgroundColor",
+            "transparent",
+        ]
+        if config.puppeteer_config and config.puppeteer_config.exists():
+            cmd.extend(["--puppeteerConfigFile", str(config.puppeteer_config)])
+
+        try:
+            subprocess.run(cmd, check=True, capture_output=True)
+        except subprocess.CalledProcessError as exc:
+            stderr = exc.stderr.decode(errors="replace") if exc.stderr else "(no stderr)"
+            raise RuntimeError(f"mmdc failed (exit {exc.returncode}) rendering diagram {counter}:\n{stderr}") from exc
 
         return f"![Diagram {counter}]({out_file})"
 

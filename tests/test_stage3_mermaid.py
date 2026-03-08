@@ -11,8 +11,8 @@ from obsidian_export.config import MermaidConfig
 from obsidian_export.pipeline.stage3_mermaid import render_mermaid_blocks
 
 
-def _make_config(mmdc_bin: Path, scale: int) -> MermaidConfig:
-    return MermaidConfig(mmdc_bin=mmdc_bin, scale=scale)
+def _make_config(mmdc_bin: Path, scale: int, puppeteer_config: Path | None = None) -> MermaidConfig:
+    return MermaidConfig(mmdc_bin=mmdc_bin, scale=scale, puppeteer_config=puppeteer_config)
 
 
 def _make_fake_mmdc(tmp_path: Path) -> Path:
@@ -104,7 +104,8 @@ def test_render_with_real_mmdc(tmp_path: Path) -> None:
     mmdc_path = shutil.which("mmdc")
     if mmdc_path is None:
         pytest.skip("mmdc not installed — skipping integration test")
-    config = _make_config(Path(mmdc_path), 2)
+    puppeteer_cfg = Path(__file__).parent.parent / "obsidian_export" / "defaults" / "puppeteer-config.json"
+    config = _make_config(Path(mmdc_path), 2, puppeteer_config=puppeteer_cfg if puppeteer_cfg.exists() else None)
     text = "```mermaid\ngraph TB\n    A --> B\n```"
     result = render_mermaid_blocks(text, config, tmp_path)
     assert "![Diagram" in result

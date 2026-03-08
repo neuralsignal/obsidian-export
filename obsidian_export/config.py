@@ -11,6 +11,7 @@ import yaml
 class MermaidConfig:
     mmdc_bin: Path
     scale: int
+    puppeteer_config: Path | None = None
 
 
 @dataclass(frozen=True)
@@ -94,6 +95,13 @@ def _build_config(raw: dict, config_dir: Path | None) -> ConvertConfig:
     if config_dir and not mmdc_bin_raw.is_absolute():
         mmdc_bin_raw = config_dir / mmdc_bin_raw
 
+    puppeteer_config_raw = mermaid_raw.get("puppeteer_config")
+    puppeteer_config: Path | None = None
+    if puppeteer_config_raw:
+        puppeteer_config = Path(puppeteer_config_raw)
+        if config_dir and not puppeteer_config.is_absolute():
+            puppeteer_config = config_dir / puppeteer_config
+
     style_raw = raw["style"]
     cc_raw = style_raw["callout_colors"]
 
@@ -143,6 +151,7 @@ def _build_config(raw: dict, config_dir: Path | None) -> ConvertConfig:
         mermaid=MermaidConfig(
             mmdc_bin=mmdc_bin_raw,
             scale=mermaid_raw["scale"],
+            puppeteer_config=puppeteer_config,
         ),
         obsidian=ObsidianConfig(
             wikilink_strategy=raw["obsidian"]["wikilink_strategy"],

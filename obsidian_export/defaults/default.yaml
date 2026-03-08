@@ -4,6 +4,7 @@
 mermaid:
   mmdc_bin: "mmdc"
   scale: 3
+  puppeteer_config: null
 
 obsidian:
   wikilink_strategy: "text"
