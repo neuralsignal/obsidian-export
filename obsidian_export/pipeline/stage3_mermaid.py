@@ -16,15 +16,15 @@ def render_mermaid_blocks(body: str, config: MermaidConfig, tmpdir: Path) -> str
     Raises subprocess.CalledProcessError if mmdc rendering fails.
     """
     mmdc = config.mmdc_bin
-    if not mmdc.exists():
-        raise FileNotFoundError(
-            f"mmdc binary not found at {mmdc}. Run: cd skills/markdown-convert && pixi run python scripts/setup_mmdc.py"
-        )
 
     counter = 0
 
     def replace_block(m: re.Match) -> str:
         nonlocal counter
+        if not mmdc.exists():
+            raise FileNotFoundError(
+                f"mmdc binary not found at {mmdc}. Install: npm install --prefix .mmdc @mermaid-js/mermaid-cli"
+            )
         diagram_src = m.group(1)
         counter += 1
 

@@ -85,7 +85,7 @@ def run(
     title = str(fm.get("title", input_path.stem))
     body = strip_leading_title(body, title)
     vault_root = input_path.parent
-    body = resolve_embeds(body, vault_root, input_path)
+    body = resolve_embeds(body, vault_root, input_path, config.obsidian.max_embed_depth)
     body = strip_obsidian_syntax(body)
 
     # Stage 2: Text-level pre-processing
@@ -97,7 +97,7 @@ def run(
 
         # Stage 3b: SVG -> PDF conversion (PDF output only)
         if output_format == "pdf":
-            body = convert_svg_images(body, Path(tmpdir))
+            body = convert_svg_images(body, Path(tmpdir), resource_path=input_path.parent)
 
         # Stage 4: Pandoc conversion
         if output_format == "pdf":
@@ -112,6 +112,7 @@ def run(
                 rendered_header,
                 filters_dir,
                 output_path,
+                resource_path=input_path.parent,
             )
         else:
-            convert_to_docx(body, title, config.pandoc, output_path)
+            convert_to_docx(body, title, config.pandoc, output_path, resource_path=input_path.parent)

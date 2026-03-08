@@ -4,7 +4,6 @@ __pycache__/
 dist/
 build/
 .pixi/
-pixi.lock
 .mmdc/
 .pytest_cache/
 .hypothesis/

@@ -19,3 +19,13 @@ pyyaml = ">=6.0,<7"
 click = ">=8.0,<9"
 pytest = ">=8.0,<9"
 hypothesis = ">=6.0,<7"
+ruff = ">=0.11,<1"
+pytest-cov = ">=5.0,<6"
+
+[tasks]
+lint = "ruff check obsidian_export/ tests/"
+format-check = "ruff format --check obsidian_export/ tests/"
+format = "ruff format obsidian_export/ tests/"
+setup-mmdc = "npm install --prefix .mmdc @mermaid-js/mermaid-cli"
+test = "pytest tests/ -v --tb=short"
+test-cov = "pytest tests/ -v --tb=short --cov=obsidian_export --cov-report=term-missing"

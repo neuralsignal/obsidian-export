@@ -2,9 +2,11 @@
 
 from pathlib import Path
 
+import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
+from obsidian_export.exceptions import CircularEmbedError, EmbedNotFoundError
 from obsidian_export.pipeline.stage1_vault import (
     clean_frontmatter,
     parse_frontmatter,
@@ -63,6 +65,26 @@ class TestParseFrontmatter:
         fm, _ = parse_frontmatter("No frontmatter here.")
         assert isinstance(fm, dict)
 
+    def test_title_with_colon(self) -> None:
+        """Obsidian allows unquoted colons in values — parser must handle this."""
+        text = "---\ntitle: Memory: Knowledge folder consolidation\ntype: memory\n---\nBody."
+        fm, body = parse_frontmatter(text)
+        assert fm["title"] == "Memory: Knowledge folder consolidation"
+        assert fm["type"] == "memory"
+        assert "Body." in body
+
+    def test_title_with_colon_and_dash(self) -> None:
+        text = "---\ntitle: Memory: Azure Setup — Obungi CSP & MTF\n---\nBody."
+        fm, body = parse_frontmatter(text)
+        assert fm["title"] == "Memory: Azure Setup — Obungi CSP & MTF"
+        assert "Body." in body
+
+    def test_valid_yaml_with_colon_not_broken(self) -> None:
+        """Ensure properly quoted values still work after the fix."""
+        text = '---\ntitle: "Already: Quoted"\n---\nBody.'
+        fm, _ = parse_frontmatter(text)
+        assert fm["title"] == "Already: Quoted"
+
 
 # ── clean_frontmatter ────────────────────────────────────────────────────────
 
@@ -113,10 +135,10 @@ class TestStripObsidianSyntax:
         assert "Entity Name" in result
         assert "[[" not in result
 
-    def test_callout_label_stripped(self) -> None:
+    def test_callout_label_preserved(self) -> None:
         text = "> [!NOTE] Title\n> Content here.\n"
         result = strip_obsidian_syntax(text)
-        assert "[!NOTE]" not in result
+        assert "[!NOTE]" in result
         assert "Content here." in result
 
     def test_relations_section_removed(self) -> None:
@@ -221,36 +243,34 @@ def test_strip_is_idempotent(text: str) -> None:
 class TestResolveEmbeds:
     def test_no_embeds_unchanged(self, tmp_path: Path) -> None:
         text = "# Heading\n\nContent without embeds."
-        result = resolve_embeds(text, tmp_path, tmp_path / "note.md")
+        result = resolve_embeds(text, tmp_path, tmp_path / "note.md", 10)
         assert result == text
 
     def test_resolves_existing_note(self, tmp_path: Path) -> None:
         (tmp_path / "other.md").write_text("# Other\n\nOther content.", encoding="utf-8")
         text = "Before ![[other]] After"
-        result = resolve_embeds(text, tmp_path, tmp_path / "note.md")
+        result = resolve_embeds(text, tmp_path, tmp_path / "note.md", 10)
         assert "Other content." in result
         assert "![[" not in result
 
-    def test_missing_embed_becomes_warning(self, tmp_path: Path) -> None:
+    def test_missing_embed_raises(self, tmp_path: Path) -> None:
         text = "![[nonexistent]]"
-        result = resolve_embeds(text, tmp_path, tmp_path / "note.md")
-        assert "nonexistent" in result
-        assert "![[" not in result
+        with pytest.raises(EmbedNotFoundError, match="nonexistent"):
+            resolve_embeds(text, tmp_path, tmp_path / "note.md", 10)
 
-    def test_circular_embed_detected(self, tmp_path: Path) -> None:
+    def test_circular_embed_raises(self, tmp_path: Path) -> None:
         # a embeds b, b embeds a
         (tmp_path / "a.md").write_text("A content ![[b]]", encoding="utf-8")
         (tmp_path / "b.md").write_text("B content ![[a]]", encoding="utf-8")
-        # Should not infinite loop
         text = "![[a]]"
-        result = resolve_embeds(text, tmp_path, tmp_path / "root.md")
-        assert "A content" in result
+        with pytest.raises(CircularEmbedError, match="Circular embed"):
+            resolve_embeds(text, tmp_path, tmp_path / "root.md", 10)
 
     def test_image_embed_becomes_markdown_image(self, tmp_path: Path) -> None:
         img = tmp_path / "diagram.png"
         img.write_bytes(b"\x89PNG\r\n\x1a\n")  # minimal PNG header
         text = "![[diagram.png]]"
-        result = resolve_embeds(text, tmp_path, tmp_path / "note.md")
+        result = resolve_embeds(text, tmp_path, tmp_path / "note.md", 10)
         assert "![](" in result
         assert "![[" not in result
 
@@ -260,6 +280,6 @@ class TestResolveEmbeds:
             encoding="utf-8",
         )
         text = "![[doc#Section A]]"
-        result = resolve_embeds(text, tmp_path, tmp_path / "note.md")
+        result = resolve_embeds(text, tmp_path, tmp_path / "note.md", 10)
         assert "Section A content." in result
         assert "Section B content." not in result

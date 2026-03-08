@@ -20,23 +20,10 @@
 \usepackage{{fontspec}}
 \usepackage{{unicode-math}}
 
-% Emoji substitutions (no emoji font bundled with tectonic; map to math symbols)
+% Emoji and unicode substitutions (generated from config unicode_chars)
 \usepackage{{newunicodechar}}
 \usepackage{{amssymb}}
-\newunicodechar{{⚠}}{{\ensuremath{{\triangle}}}}
-\newunicodechar{{✅}}{{\ensuremath{{\checkmark}}}}
-\newunicodechar{{❌}}{{\ensuremath{{\times}}}}
-\newunicodechar{{🔴}}{{\ensuremath{{\bullet}}}}
-\newunicodechar{{🟡}}{{\ensuremath{{\circ}}}}
-\newunicodechar{{🟢}}{{\ensuremath{{\cdot}}}}
-% Unicode math symbols used in text mode (not covered by unicode-math in text mode)
-\newunicodechar{{≥}}{{\ensuremath{{\geq}}}}
-\newunicodechar{{≤}}{{\ensuremath{{\leq}}}}
-\newunicodechar{{≈}}{{\ensuremath{{\approx}}}}
-\newunicodechar{{→}}{{\ensuremath{{\rightarrow}}}}
-\newunicodechar{{←}}{{\ensuremath{{\leftarrow}}}}
-\newunicodechar{{↔}}{{\ensuremath{{\leftrightarrow}}}}
-\newunicodechar{{×}}{{\ensuremath{{\times}}}}
+{unicode_char_block}
 
 % Callout boxes
 \usepackage[most]{{tcolorbox}}
@@ -54,6 +41,9 @@
   before skip=12pt,after skip=12pt
 }}
 
+{brand_colors_block}
+{heading_styles_block}
+{title_style_block}
 {font_block}
 {line_spacing_block}
 {header_footer_block}

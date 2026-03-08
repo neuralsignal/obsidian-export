@@ -95,7 +95,7 @@ obsidian:
   url_length_threshold: 60            # URL length for footnote_long strategy
 
 pandoc:
-  from_format: "gfm-tex_math_dollars" # Pandoc input format
+  from_format: "gfm-tex_math_dollars+footnotes" # Pandoc input format
 
 style:
   name: "default"                     # Style name (resolves to header.tex template)
@@ -115,13 +115,41 @@ style:
   footer_left: ""                    # Left footer
   footer_center: "\\thepage"         # Center footer
   footer_right: ""                   # Right footer
-  logo: ""                           # Logo filename (relative to style dir)
+  logo: ""                           # Logo filename (relative to config dir)
   style_dir: ""                      # Explicit style directory path
+  unicode_chars:                     # Unicode → LaTeX substitutions
+    "⚠": "\\ensuremath{\\triangle}"
+    "✅": "\\ensuremath{\\checkmark}"
+    "❌": "\\ensuremath{\\times}"
+    # ... see default.yaml for full list
   callout_colors:
     note: [219, 234, 254]
     tip: [220, 252, 231]
     warning: [254, 243, 199]
     danger: [254, 226, 226]
+  brand_colors:                      # Custom named colors (empty = none)
+    petrol: [20, 75, 95]
+    turkis: [0, 152, 160]
+  heading_styles:                    # Custom heading formats (empty = default)
+    - level: "section"               # LaTeX level: section, subsection, subsubsection
+      size: "Large"                  # LaTeX size: huge, LARGE, Large, large, normalsize
+      bold: true
+      sans: true                     # Use sans-serif font
+      color: "petrol"               # Reference to brand_colors name or LaTeX color
+      uppercase: false
+    - level: "subsection"
+      size: "large"
+      bold: true
+      sans: true
+      color: "turkis"
+      uppercase: true                # Render heading text in UPPERCASE
+  title_style: null                  # Custom title block (null = default)
+    # size: "huge"
+    # bold: true
+    # sans: true
+    # color: "petrol"
+    # date_visible: true
+    # vskip_after: "2em"
 ```
 
 ## Python API

@@ -1,10 +1,11 @@
 """Stage 1: Vault operations — frontmatter, embed resolution, Obsidian syntax stripping."""
 
 import re
-import warnings
 from pathlib import Path
 
 import yaml
+
+from obsidian_export.exceptions import CircularEmbedError, EmbedNotFoundError
 
 _OBSIDIAN_KEYS = frozenset(["aliases", "tags", "cssclass", "publish", "banner", "cssclasses"])
 
@@ -13,10 +14,30 @@ _EMBED_RE = re.compile(r"!\[\[([^\]]+)\]\]")
 _SECTION_EMBED_RE = re.compile(r"^([^#]+)#(.+)$")
 _WIKILINK_PIPE_RE = re.compile(r"\[\[([^\]|]+)\|([^\]]+)\]\]")
 _WIKILINK_BARE_RE = re.compile(r"\[\[([^\]]+)\]\]")
-_CALLOUT_RE = re.compile(r"^(> *)\[!(\w+)\][^\n]*\n", re.MULTILINE)
 _RELATIONS_RE = re.compile(r"\n## Relations\b.*", re.DOTALL | re.IGNORECASE)
 
-_MAX_EMBED_DEPTH = 10
+
+def _quote_yaml_values(raw: str) -> str:
+    """Quote unquoted YAML values that contain colons.
+
+    Obsidian allows ``title: Memory: stuff`` which is invalid YAML
+    (the second colon starts a nested mapping).  This function detects
+    ``key: value: more`` lines and wraps the value in double quotes.
+    """
+    fixed_lines: list[str] = []
+    for line in raw.splitlines(keepends=True):
+        stripped = line.lstrip()
+        # Only fix top-level simple key-value lines (no leading whitespace
+        # beyond what the original line has, not list items, etc.).
+        if stripped and not stripped.startswith("-") and not stripped.startswith("#"):
+            kv = re.match(r"^(\s*\w[\w\s]*?):\s+(.+)$", line)
+            if kv:
+                value = kv.group(2).rstrip("\n")
+                # If the value itself contains an unquoted colon, wrap it.
+                if ":" in value and not (value.startswith('"') or value.startswith("'")):
+                    line = f'{kv.group(1)}: "{value}"\n'
+        fixed_lines.append(line)
+    return "".join(fixed_lines)
 
 
 def parse_frontmatter(text: str) -> tuple[dict, str]:
@@ -24,7 +45,12 @@ def parse_frontmatter(text: str) -> tuple[dict, str]:
     m = _FRONTMATTER_RE.match(text)
     if not m:
         return {}, text
-    fm = yaml.safe_load(m.group(1)) or {}
+    raw = m.group(1)
+    try:
+        fm = yaml.safe_load(raw) or {}
+    except yaml.YAMLError:
+        # Retry with auto-quoting of values that contain colons.
+        fm = yaml.safe_load(_quote_yaml_values(raw)) or {}
     body = text[m.end() :]
     return fm, body
 
@@ -73,19 +99,29 @@ def resolve_embeds(
     content: str,
     vault_root: Path,
     current_file: Path,
-    visited: frozenset[Path] | None = None,
-    depth: int = 0,
+    max_embed_depth: int,
 ) -> str:
     """Recursively resolve ![[embed]] blocks with cycle detection.
 
     - Text embeds: resolved inline (with depth cap)
     - Section embeds (![[note#Heading]]): extract section
     - Image embeds (.png, .jpg, .svg, .gif, .webp): converted to ![]() refs
-    - Missing embeds: replaced with warning block
+    - Missing embeds: raise EmbedNotFoundError
+    - Circular embeds: raise CircularEmbedError
     """
-    if visited is None:
-        visited = frozenset()
-    if depth > _MAX_EMBED_DEPTH:
+    return _resolve_embeds_recursive(content, vault_root, current_file, frozenset(), 0, max_embed_depth)
+
+
+def _resolve_embeds_recursive(
+    content: str,
+    vault_root: Path,
+    current_file: Path,
+    visited: frozenset[Path],
+    depth: int,
+    max_embed_depth: int,
+) -> str:
+    """Internal recursive embed resolution with cycle detection."""
+    if depth > max_embed_depth:
         return content
 
     def replace_embed(m: re.Match) -> str:
@@ -117,12 +153,11 @@ def resolve_embeds(
             # Try relative to current file's directory
             note_path = current_file.parent / f"{note_slug}.md"
         if not note_path.exists():
-            warnings.warn(f"Embed not found: {raw!r}", stacklevel=2)
-            return f"> [!warning] Embed not found: {raw}"
+            raise EmbedNotFoundError(f"Embed not found: {raw!r}. Searched: {vault_root}, {current_file.parent}")
 
         note_path = note_path.resolve()
         if note_path in visited:
-            return f"> [!warning] Circular embed skipped: {raw}"
+            raise CircularEmbedError(f"Circular embed chain detected: {raw!r}")
 
         note_text = note_path.read_text(encoding="utf-8")
         _, note_body = parse_frontmatter(note_text)
@@ -131,12 +166,13 @@ def resolve_embeds(
             note_body = _extract_section(note_body, heading)
 
         # Recurse
-        resolved = resolve_embeds(
+        resolved = _resolve_embeds_recursive(
             note_body,
             vault_root,
             note_path,
             visited | {note_path},
             depth + 1,
+            max_embed_depth,
         )
         return resolved.strip()
 
@@ -157,8 +193,9 @@ def strip_obsidian_syntax(text: str) -> str:
     - ![[embed]] → removed (use resolve_embeds first for inline resolution)
     - [[Entity|Display]] → Display
     - [[Entity]] → Entity
-    - > [!type] callout labels → stripped (content kept as blockquote)
     - ## Relations section → removed with all content below
+
+    Callout syntax (> [!type]) is preserved for downstream processing by stage2.
     """
     # Remove bare embeds (not already resolved)
     text = _EMBED_RE.sub("", text)
@@ -166,8 +203,6 @@ def strip_obsidian_syntax(text: str) -> str:
     text = _WIKILINK_PIPE_RE.sub(lambda m: m.group(2), text)
     # Bare wikilinks → entity name
     text = _WIKILINK_BARE_RE.sub(lambda m: m.group(1), text)
-    # Callout labels: "> [!note] Title\n" → "> \n" (keep blockquote, drop label)
-    text = _CALLOUT_RE.sub(lambda m: m.group(1) + "\n", text)
     # Remove Relations section
     text = _RELATIONS_RE.sub("", text)
     return text

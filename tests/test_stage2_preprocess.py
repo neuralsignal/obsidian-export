@@ -1,9 +1,11 @@
 """Tests for obsidian_export.pipeline.stage2_preprocess."""
 
+import dataclasses
+
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from obsidian_export.config import ObsidianConfig
+from obsidian_export.config import ObsidianConfig, default_config
 from obsidian_export.pipeline.stage2_preprocess import (
     convert_callouts,
     escape_dollar_signs,
@@ -13,14 +15,12 @@ from obsidian_export.pipeline.stage2_preprocess import (
 )
 
 
-def _make_config(**kwargs) -> ObsidianConfig:
-    defaults = {
-        "wikilink_strategy": "text",
-        "url_strategy": "footnote_long",
-        "url_length_threshold": 60,
-    }
-    defaults.update(kwargs)
-    return ObsidianConfig(**defaults)
+def _make_config(**overrides) -> ObsidianConfig:
+    """Build ObsidianConfig from default_config(), applying overrides."""
+    base = default_config().obsidian
+    fields = {f.name: getattr(base, f.name) for f in dataclasses.fields(base)}
+    fields.update(overrides)
+    return ObsidianConfig(**fields)
 
 
 # ── escape_dollar_signs ───────────────────────────────────────────────────────

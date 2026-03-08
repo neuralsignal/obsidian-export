@@ -9,9 +9,10 @@ obsidian:
   wikilink_strategy: "text"
   url_strategy: "footnote_long"
   url_length_threshold: 60
+  max_embed_depth: 10
 
 pandoc:
-  from_format: "gfm-tex_math_dollars"
+  from_format: "gfm-tex_math_dollars+footnotes"
 
 style:
   name: "default"
@@ -33,6 +34,29 @@ style:
   footer_right: ""
   logo: ""
   style_dir: ""
+  unicode_chars:
+    "⚠": "\\ensuremath{\\triangle}"
+    "✅": "\\ensuremath{\\checkmark}"
+    "❌": "\\ensuremath{\\times}"
+    "🔴": "\\ensuremath{\\bullet}"
+    "🟡": "\\ensuremath{\\circ}"
+    "🟢": "\\ensuremath{\\cdot}"
+    "≥": "\\ensuremath{\\geq}"
+    "≤": "\\ensuremath{\\leq}"
+    "≈": "\\ensuremath{\\approx}"
+    "→": "\\ensuremath{\\rightarrow}"
+    "←": "\\ensuremath{\\leftarrow}"
+    "↔": "\\ensuremath{\\leftrightarrow}"
+    "×": "\\ensuremath{\\times}"
+    "√": "\\ensuremath{\\surd}"
+    "·": "\\ensuremath{\\cdot}"
+    "└": "└"
+    "├": "├"
+    "─": "─"
+    "│": "│"
+  brand_colors: {}
+  heading_styles: []
+  title_style: null
   callout_colors:
     note: [219, 234, 254]
     tip: [220, 252, 231]

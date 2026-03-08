@@ -4,7 +4,18 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+import yaml
+
 from obsidian_export.config import PandocConfig, StyleConfig
+
+
+def _yaml_metadata_block(metadata: dict) -> str:
+    """Build a pandoc YAML metadata block from a dict.
+
+    This safely handles values containing colons, quotes, and other
+    characters that would break ``--metadata=key:value`` CLI syntax.
+    """
+    return "---\n" + yaml.dump(metadata, allow_unicode=True, default_flow_style=False) + "---\n\n"
 
 
 def convert_to_pdf(
@@ -15,6 +26,7 @@ def convert_to_pdf(
     rendered_header: str,
     filters_dir: Path,
     output_path: Path,
+    resource_path: Path | None,
 ) -> None:
     """Convert preprocessed markdown text to PDF via pandoc + tectonic."""
     lua_filters = [
@@ -37,6 +49,13 @@ def convert_to_pdf(
         header_tmp_path = Path(hf.name)
 
     try:
+        metadata_block = _yaml_metadata_block({
+            "title": title,
+            "table_fontsize": style_config.table_fontsize,
+            "url_footnote_threshold": style_config.url_footnote_threshold,
+        })
+        text = metadata_block + text
+
         cmd = [
             "pandoc",
             f"--from={pandoc_config.from_format}",
@@ -47,11 +66,10 @@ def convert_to_pdf(
             f"--variable=fontsize:{style_config.fontsize}",
             f"--variable=linkcolor:{style_config.linkcolor}",
             f"--variable=urlcolor:{style_config.urlcolor}",
-            f"--metadata=title:{title}",
-            f"--metadata=table_fontsize:{style_config.table_fontsize}",
-            f"--metadata=url_footnote_threshold:{style_config.url_footnote_threshold}",
             f"--output={output_path}",
         ]
+        if resource_path is not None:
+            cmd.append(f"--resource-path={resource_path}")
         for f in lua_filters:
             cmd.append(f"--lua-filter={f}")
 
@@ -71,18 +89,25 @@ def convert_to_docx(
     title: str,
     pandoc_config: PandocConfig,
     output_path: Path,
+    resource_path: Path | None,
 ) -> None:
     """Convert preprocessed markdown text to DOCX via pandoc."""
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
+    metadata_block = _yaml_metadata_block({"title": title})
+    text = metadata_block + text
+
+    cmd = [
+        "pandoc",
+        f"--from={pandoc_config.from_format}",
+        "--to=docx",
+        f"--output={output_path}",
+    ]
+    if resource_path is not None:
+        cmd.append(f"--resource-path={resource_path}")
+
     subprocess.run(
-        [
-            "pandoc",
-            f"--from={pandoc_config.from_format}",
-            "--to=docx",
-            f"--metadata=title:{title}",
-            f"--output={output_path}",
-        ],
+        cmd,
         input=text,
         text=True,
         encoding="utf-8",

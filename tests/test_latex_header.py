@@ -1,14 +1,19 @@
 """Tests for obsidian_export.pipeline.latex_header."""
 
+import dataclasses
 from pathlib import Path
 
 import pytest
 
-from obsidian_export.config import CalloutColors, StyleConfig
+from obsidian_export.config import CalloutColors, StyleConfig, default_config
 from obsidian_export.pipeline.latex_header import (
+    _build_brand_colors_block,
     _build_font_block,
     _build_header_footer_block,
+    _build_heading_styles_block,
     _build_line_spacing_block,
+    _build_title_style_block,
+    _build_unicode_char_block,
     _escape_latex,
     _substitute_placeholders,
     _truncate_title,
@@ -18,64 +23,40 @@ from obsidian_export.pipeline.latex_header import (
 DEFAULT_TEMPLATE = Path(__file__).parent.parent / "obsidian_export" / "assets" / "styles" / "default" / "header.tex"
 
 
-def _make_style(
-    name: str = "default",
-    geometry: str = "a4paper,margin=25mm",
-    fontsize: str = "10pt",
-    mainfont: str = "",
-    sansfont: str = "",
-    monofont: str = "",
-    linkcolor: str = "NavyBlue",
-    urlcolor: str = "NavyBlue",
-    line_spacing: float = 1.0,
-    table_fontsize: str = "small",
-    image_max_height_ratio: float = 0.40,
-    url_footnote_threshold: int = 60,
-    header_left: str = "",
-    header_right: str = "",
-    footer_left: str = "",
-    footer_center: str = "",
-    footer_right: str = "",
-    callout_colors: CalloutColors | None = None,
-    logo: str = "",
-    style_dir: str = "",
-) -> StyleConfig:
-    if callout_colors is None:
-        callout_colors = DEFAULT_CALLOUT
-    return StyleConfig(
-        name=name,
-        geometry=geometry,
-        fontsize=fontsize,
-        mainfont=mainfont,
-        sansfont=sansfont,
-        monofont=monofont,
-        linkcolor=linkcolor,
-        urlcolor=urlcolor,
-        line_spacing=line_spacing,
-        table_fontsize=table_fontsize,
-        image_max_height_ratio=image_max_height_ratio,
-        url_footnote_threshold=url_footnote_threshold,
-        header_left=header_left,
-        header_right=header_right,
-        footer_left=footer_left,
-        footer_center=footer_center,
-        footer_right=footer_right,
-        callout_colors=callout_colors,
-        logo=logo,
-        style_dir=style_dir,
-    )
-
-
-DEFAULT_CALLOUT = CalloutColors(
-    note=(219, 234, 254),
-    tip=(220, 252, 231),
-    warning=(254, 243, 199),
-    danger=(254, 226, 226),
-)
+def _make_style(**overrides) -> StyleConfig:
+    """Build StyleConfig from default_config(), applying overrides."""
+    base = default_config().style
+    fields = {f.name: getattr(base, f.name) for f in dataclasses.fields(base)}
+    fields.update(overrides)
+    return StyleConfig(**fields)
 
 
 def _default_style() -> StyleConfig:
     return _make_style(footer_center="\\thepage")
+
+
+class TestBuildUnicodeCharBlock:
+    def test_empty_returns_empty(self) -> None:
+        assert _build_unicode_char_block(()) == ""
+
+    def test_single_char(self) -> None:
+        result = _build_unicode_char_block((("⚠", "\\ensuremath{\\triangle}"),))
+        assert result == "\\newunicodechar{⚠}{\\ensuremath{\\triangle}}"
+
+    def test_multiple_chars(self) -> None:
+        chars = (
+            ("⚠", "\\ensuremath{\\triangle}"),
+            ("✅", "\\ensuremath{\\checkmark}"),
+        )
+        result = _build_unicode_char_block(chars)
+        assert "\\newunicodechar{⚠}{\\ensuremath{\\triangle}}" in result
+        assert "\\newunicodechar{✅}{\\ensuremath{\\checkmark}}" in result
+        assert result.count("\n") == 1  # two lines, one newline
+
+    def test_box_drawing_chars(self) -> None:
+        chars = (("└", "└"),)
+        result = _build_unicode_char_block(chars)
+        assert result == "\\newunicodechar{└}{└}"
 
 
 class TestBuildFontBlock:
@@ -151,6 +132,95 @@ class TestBuildHeaderFooterBlock:
     def test_no_head_rule(self) -> None:
         result = _build_header_footer_block("L", "", "", "", "")
         assert "\\renewcommand{\\headrulewidth}{0pt}" in result
+
+
+class TestBuildBrandColorsBlock:
+    def test_empty_returns_empty(self) -> None:
+        assert _build_brand_colors_block(()) == ""
+
+    def test_single_color(self) -> None:
+        result = _build_brand_colors_block((("petrol", 20, 75, 95),))
+        assert result == "\\definecolor{petrol}{RGB}{20,75,95}"
+
+    def test_multiple_colors(self) -> None:
+        colors = (
+            ("petrol", 20, 75, 95),
+            ("turkis", 0, 152, 160),
+            ("mint", 109, 185, 160),
+        )
+        result = _build_brand_colors_block(colors)
+        assert "\\definecolor{petrol}{RGB}{20,75,95}" in result
+        assert "\\definecolor{turkis}{RGB}{0,152,160}" in result
+        assert "\\definecolor{mint}{RGB}{109,185,160}" in result
+        assert result.count("\n") == 2
+
+
+class TestBuildHeadingStylesBlock:
+    def test_empty_returns_empty(self) -> None:
+        assert _build_heading_styles_block(()) == ""
+
+    def test_single_level(self) -> None:
+        styles = (("section", "Large", True, True, "petrol", False),)
+        result = _build_heading_styles_block(styles)
+        assert "\\usepackage{titlesec}" in result
+        assert "\\titleformat{\\section}" in result
+        assert "\\Large" in result
+        assert "\\bfseries" in result
+        assert "\\sffamily" in result
+        assert "\\color{petrol}" in result
+
+    def test_uppercase_flag(self) -> None:
+        styles = (("subsection", "large", True, True, "turkis", True),)
+        result = _build_heading_styles_block(styles)
+        assert "\\MakeUppercase" in result
+
+    def test_no_uppercase(self) -> None:
+        styles = (("section", "Large", True, False, "", False),)
+        result = _build_heading_styles_block(styles)
+        assert "\\MakeUppercase" not in result
+        assert "\\sffamily" not in result
+
+    def test_all_three_levels(self) -> None:
+        styles = (
+            ("section", "Large", True, True, "petrol", False),
+            ("subsection", "large", True, True, "turkis", True),
+            ("subsubsection", "normalsize", True, True, "petrol", False),
+        )
+        result = _build_heading_styles_block(styles)
+        assert "\\titleformat{\\section}" in result
+        assert "\\titleformat{\\subsection}" in result
+        assert "\\titleformat{\\subsubsection}" in result
+
+
+class TestBuildTitleStyleBlock:
+    def test_none_returns_empty(self) -> None:
+        assert _build_title_style_block(None) == ""
+
+    def test_with_style(self) -> None:
+        ts = ("huge", True, True, "petrol", True, "2em")
+        result = _build_title_style_block(ts)
+        assert "\\makeatletter" in result
+        assert "\\makeatother" in result
+        assert "\\renewcommand{\\maketitle}" in result
+        assert "\\huge" in result
+        assert "\\bfseries" in result
+        assert "\\sffamily" in result
+        assert "\\color{petrol}" in result
+        assert "\\@title" in result
+        assert "\\@date" in result
+        assert "\\vskip 2em" in result
+
+    def test_date_hidden(self) -> None:
+        ts = ("LARGE", False, False, "", False, "")
+        result = _build_title_style_block(ts)
+        assert "\\@date" not in result
+        assert "\\bfseries" not in result
+        assert "\\sffamily" not in result
+
+    def test_color_applied(self) -> None:
+        ts = ("huge", True, True, "turkis", True, "1em")
+        result = _build_title_style_block(ts)
+        assert "\\color{turkis}" in result
 
 
 class TestTruncateTitle:
@@ -317,6 +387,8 @@ class TestRenderHeader:
             "tip={tip_r},{tip_g},{tip_b} "
             "warn={warn_r},{warn_g},{warn_b} "
             "danger={danger_r},{danger_g},{danger_b} "
+            "{unicode_char_block} "
+            "{brand_colors_block} {heading_styles_block} {title_style_block} "
             "{font_block} {line_spacing_block} {header_footer_block}",
             encoding="utf-8",
         )
@@ -341,6 +413,12 @@ class TestRenderHeader:
         with pytest.raises(FileNotFoundError):
             render_header(style, Path("/nonexistent/header.tex"), "Test")
 
+    def test_unicode_char_block_in_default_template(self) -> None:
+        style = _default_style()
+        result = render_header(style, DEFAULT_TEMPLATE, "Test Doc")
+        assert "\\newunicodechar{⚠}{\\ensuremath{\\triangle}}" in result
+        assert "\\newunicodechar{✅}{\\ensuremath{\\checkmark}}" in result
+
     def test_uses_custom_template(self, tmp_path: Path) -> None:
         template = tmp_path / "header.tex"
         template.write_text(
@@ -349,6 +427,8 @@ class TestRenderHeader:
             "tip={tip_r},{tip_g},{tip_b} "
             "warn={warn_r},{warn_g},{warn_b} "
             "danger={danger_r},{danger_g},{danger_b} "
+            "{unicode_char_block} "
+            "{brand_colors_block} {heading_styles_block} {title_style_block} "
             "{font_block} {line_spacing_block} {header_footer_block}",
             encoding="utf-8",
         )

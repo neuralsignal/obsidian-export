@@ -18,6 +18,7 @@ class ObsidianConfig:
     wikilink_strategy: str
     url_strategy: str
     url_length_threshold: int
+    max_embed_depth: int
 
 
 @dataclass(frozen=True)
@@ -53,8 +54,12 @@ class StyleConfig:
     footer_center: str
     footer_right: str
     callout_colors: CalloutColors
+    unicode_chars: tuple[tuple[str, str], ...]
     logo: str
     style_dir: str
+    brand_colors: tuple[tuple[str, int, int, int], ...]
+    heading_styles: tuple[tuple[str, str, bool, bool, str, bool], ...]
+    title_style: tuple[str, bool, bool, str, bool, str] | None
 
 
 @dataclass(frozen=True)
@@ -97,6 +102,43 @@ def _build_config(raw: dict, config_dir: Path | None) -> ConvertConfig:
     if style_dir_raw and config_dir and not Path(style_dir_raw).is_absolute():
         style_dir_raw = str(config_dir / style_dir_raw)
 
+    # Resolve logo path relative to config_dir if non-empty and not absolute
+    logo_raw = style_raw["logo"]
+    if logo_raw and config_dir and not Path(logo_raw).is_absolute():
+        logo_raw = str(config_dir / logo_raw)
+
+    # Parse brand_colors: dict {name: [r,g,b]} -> tuple of (name, r, g, b)
+    brand_colors_raw = style_raw.get("brand_colors", {}) or {}
+    brand_colors = tuple((name, int(rgb[0]), int(rgb[1]), int(rgb[2])) for name, rgb in brand_colors_raw.items())
+
+    # Parse heading_styles: list of dicts -> tuple of flat tuples
+    heading_styles_raw = style_raw.get("heading_styles", []) or []
+    heading_styles = tuple(
+        (
+            h["level"],
+            h["size"],
+            bool(h.get("bold", False)),
+            bool(h.get("sans", False)),
+            h.get("color", ""),
+            bool(h.get("uppercase", False)),
+        )
+        for h in heading_styles_raw
+    )
+
+    # Parse title_style: dict or None -> flat tuple or None
+    title_style_raw = style_raw.get("title_style")
+    if title_style_raw:
+        title_style = (
+            title_style_raw["size"],
+            bool(title_style_raw.get("bold", False)),
+            bool(title_style_raw.get("sans", False)),
+            title_style_raw.get("color", ""),
+            bool(title_style_raw.get("date_visible", True)),
+            title_style_raw.get("vskip_after", ""),
+        )
+    else:
+        title_style = None
+
     return ConvertConfig(
         mermaid=MermaidConfig(
             mmdc_bin=mmdc_bin_raw,
@@ -106,6 +148,7 @@ def _build_config(raw: dict, config_dir: Path | None) -> ConvertConfig:
             wikilink_strategy=raw["obsidian"]["wikilink_strategy"],
             url_strategy=raw["obsidian"]["url_strategy"],
             url_length_threshold=raw["obsidian"]["url_length_threshold"],
+            max_embed_depth=int(raw["obsidian"]["max_embed_depth"]),
         ),
         pandoc=PandocConfig(
             from_format=raw["pandoc"]["from_format"],
@@ -134,8 +177,12 @@ def _build_config(raw: dict, config_dir: Path | None) -> ConvertConfig:
                 warning=tuple(cc_raw["warning"]),
                 danger=tuple(cc_raw["danger"]),
             ),
-            logo=style_raw["logo"],
+            unicode_chars=tuple((char, latex) for char, latex in style_raw.get("unicode_chars", {}).items()),
+            logo=logo_raw,
             style_dir=style_dir_raw,
+            brand_colors=brand_colors,
+            heading_styles=heading_styles,
+            title_style=title_style,
         ),
     )
 

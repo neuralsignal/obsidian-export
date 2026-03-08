@@ -1,13 +1,18 @@
 """Tests for obsidian_export.pipeline.stage4_pandoc."""
 
+import dataclasses
 import shutil
 from pathlib import Path
 
 import pytest
 
-from obsidian_export.config import CalloutColors, PandocConfig, StyleConfig
+from obsidian_export.config import PandocConfig, StyleConfig, default_config
 from obsidian_export.pipeline.latex_header import render_header
-from obsidian_export.pipeline.stage4_pandoc import convert_to_docx, convert_to_pdf
+from obsidian_export.pipeline.stage4_pandoc import (
+    _yaml_metadata_block,
+    convert_to_docx,
+    convert_to_pdf,
+)
 
 PANDOC_AVAILABLE = shutil.which("pandoc") is not None
 TECTONIC_AVAILABLE = shutil.which("tectonic") is not None
@@ -21,38 +26,15 @@ DEFAULT_STYLE_DIR = ASSETS_DIR / "styles" / "default"
 
 def _make_pandoc_config() -> PandocConfig:
     return PandocConfig(
-        from_format="gfm-tex_math_dollars",
+        from_format="gfm-tex_math_dollars+footnotes",
     )
 
 
-def _make_style_config() -> StyleConfig:
-    return StyleConfig(
-        name="default",
-        geometry="a4paper,margin=25mm",
-        fontsize="11pt",
-        mainfont="",
-        sansfont="",
-        monofont="",
-        linkcolor="NavyBlue",
-        urlcolor="NavyBlue",
-        line_spacing=1.0,
-        table_fontsize="small",
-        image_max_height_ratio=0.40,
-        url_footnote_threshold=60,
-        header_left="",
-        header_right="",
-        footer_left="",
-        footer_center="\\thepage",
-        footer_right="",
-        logo="",
-        style_dir="",
-        callout_colors=CalloutColors(
-            note=(219, 234, 254),
-            tip=(220, 252, 231),
-            warning=(254, 243, 199),
-            danger=(254, 226, 226),
-        ),
-    )
+def _make_style_config(**overrides) -> StyleConfig:
+    base = default_config().style
+    fields = {f.name: getattr(base, f.name) for f in dataclasses.fields(base)}
+    fields.update(overrides)
+    return StyleConfig(**fields)
 
 
 def _render_default_header() -> str:
@@ -63,24 +45,66 @@ def _render_default_header() -> str:
 SAMPLE_TEXT = "# Test Document\n\nThis is a test.\n\n| A | B |\n|---|---|\n| 1 | 2 |\n"
 
 
+class TestYamlMetadataBlock:
+    def test_simple_title(self) -> None:
+        block = _yaml_metadata_block({"title": "Hello"})
+        assert block.startswith("---\n")
+        assert block.endswith("---\n\n")
+        assert "title: Hello\n" in block
+
+    def test_title_with_colon(self) -> None:
+        """Titles containing colons must be quoted in YAML output."""
+        block = _yaml_metadata_block({"title": "Memory: Knowledge folder consolidation"})
+        assert block.startswith("---\n")
+        # yaml.dump will quote values containing colons — the key thing is
+        # that re-parsing the block yields the original value.
+        import yaml
+
+        parsed = yaml.safe_load(block.strip().strip("-"))
+        assert parsed["title"] == "Memory: Knowledge folder consolidation"
+
+    def test_title_with_special_chars(self) -> None:
+        block = _yaml_metadata_block({"title": 'Azure Setup — "Obungi" CSP & MTF'})
+        import yaml
+
+        parsed = yaml.safe_load(block.strip().strip("-"))
+        assert parsed["title"] == 'Azure Setup — "Obungi" CSP & MTF'
+
+    def test_multiple_keys(self) -> None:
+        block = _yaml_metadata_block({"title": "Test", "table_fontsize": "small"})
+        import yaml
+
+        parsed = yaml.safe_load(block.strip().strip("-"))
+        assert parsed["title"] == "Test"
+        assert parsed["table_fontsize"] == "small"
+
+
 class TestConvertToDocx:
     def test_produces_file(self, tmp_path: Path) -> None:
         config = _make_pandoc_config()
         out = tmp_path / "output.docx"
-        convert_to_docx(SAMPLE_TEXT, "Test Document", config, out)
+        convert_to_docx(SAMPLE_TEXT, "Test Document", config, out, resource_path=None)
         assert out.exists()
         assert out.stat().st_size > 0
 
     def test_creates_parent_dirs(self, tmp_path: Path) -> None:
         config = _make_pandoc_config()
         out = tmp_path / "nested" / "dir" / "output.docx"
-        convert_to_docx(SAMPLE_TEXT, "Test", config, out)
+        convert_to_docx(SAMPLE_TEXT, "Test", config, out, resource_path=None)
         assert out.exists()
+
+    def test_title_with_colon(self, tmp_path: Path) -> None:
+        """Titles containing colons must not break conversion."""
+        config = _make_pandoc_config()
+        out = tmp_path / "output.docx"
+        convert_to_docx(SAMPLE_TEXT, "Memory: Knowledge folder consolidation", config, out, resource_path=None)
+        assert out.exists()
+        assert out.stat().st_size > 0
 
     def test_output_is_docx_format(self, tmp_path: Path) -> None:
         config = _make_pandoc_config()
         out = tmp_path / "output.docx"
-        convert_to_docx(SAMPLE_TEXT, "Test", config, out)
+        convert_to_docx(SAMPLE_TEXT, "Test", config, out, resource_path=None)
         # DOCX files start with PK (zip format)
         header = out.read_bytes()[:2]
         assert header == b"PK"
@@ -101,6 +125,7 @@ class TestConvertToPdf:
             rendered_header,
             FILTERS_DIR,
             out,
+            resource_path=None,
         )
         assert out.exists()
         assert out.stat().st_size > 1000
@@ -118,6 +143,7 @@ class TestConvertToPdf:
             rendered_header,
             FILTERS_DIR,
             out,
+            resource_path=None,
         )
         header = out.read_bytes()[:5]
         assert header == b"%PDF-"
@@ -136,7 +162,27 @@ class TestConvertToPdf:
                 rendered_header,
                 tmp_path / "nonexistent",
                 out,
+                resource_path=None,
             )
+
+    def test_title_with_colon(self, tmp_path: Path) -> None:
+        """Titles containing colons must not break PDF conversion."""
+        pandoc_config = _make_pandoc_config()
+        style_config = _make_style_config()
+        rendered_header = _render_default_header()
+        out = tmp_path / "output.pdf"
+        convert_to_pdf(
+            SAMPLE_TEXT,
+            "Memory: Azure Subscription Setup — Obungi CSP",
+            pandoc_config,
+            style_config,
+            rendered_header,
+            FILTERS_DIR,
+            out,
+            resource_path=None,
+        )
+        assert out.exists()
+        assert out.read_bytes()[:5] == b"%PDF-"
 
     def test_dollar_sign_safe(self, tmp_path: Path) -> None:
         """Ensure $25/user/month doesn't break PDF compilation."""
@@ -154,5 +200,6 @@ class TestConvertToPdf:
             rendered_header,
             FILTERS_DIR,
             out,
+            resource_path=None,
         )
         assert out.exists()

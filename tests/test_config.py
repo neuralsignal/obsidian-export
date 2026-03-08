@@ -30,9 +30,10 @@ VALID_DATA = {
         "wikilink_strategy": "text",
         "url_strategy": "footnote_long",
         "url_length_threshold": 60,
+        "max_embed_depth": 10,
     },
     "pandoc": {
-        "from_format": "gfm-tex_math_dollars",
+        "from_format": "gfm-tex_math_dollars+footnotes",
     },
     "style": {
         "name": "default",
@@ -54,6 +55,10 @@ VALID_DATA = {
         "footer_right": "",
         "logo": "",
         "style_dir": "",
+        "unicode_chars": {
+            "⚠": "\\ensuremath{\\triangle}",
+            "✅": "\\ensuremath{\\checkmark}",
+        },
         "callout_colors": {
             "note": [219, 234, 254],
             "tip": [220, 252, 231],
@@ -104,7 +109,7 @@ def test_config_is_frozen(tmp_path: Path) -> None:
 def test_pandoc_config_only_has_from_format(tmp_path: Path) -> None:
     cfg = _write_config(tmp_path, VALID_DATA)
     result = load_config(cfg)
-    assert result.pandoc.from_format == "gfm-tex_math_dollars"
+    assert result.pandoc.from_format == "gfm-tex_math_dollars+footnotes"
     assert not hasattr(result.pandoc, "geometry")
 
 
@@ -175,6 +180,7 @@ def test_default_config_returns_convert_config() -> None:
     assert result.style.name == "default"
     assert result.style.fontsize == "10pt"
     assert result.mermaid.scale == 3
+    assert result.obsidian.max_embed_depth == 10
 
 
 # ── deep merge ──────────────────────────────────────────────────────────────
@@ -228,7 +234,39 @@ def test_logo_field_loaded(tmp_path: Path) -> None:
     data["style"] = {**VALID_DATA["style"], "logo": "brand_logo.png"}
     cfg = _write_config(tmp_path, data)
     result = load_config(cfg)
-    assert result.style.logo == "brand_logo.png"
+    assert result.style.logo == str(tmp_path / "brand_logo.png")
+
+
+def test_unicode_chars_loaded(tmp_path: Path) -> None:
+    cfg = _write_config(tmp_path, VALID_DATA)
+    result = load_config(cfg)
+    assert isinstance(result.style.unicode_chars, tuple)
+    assert ("⚠", "\\ensuremath{\\triangle}") in result.style.unicode_chars
+    assert ("✅", "\\ensuremath{\\checkmark}") in result.style.unicode_chars
+
+
+def test_unicode_chars_from_defaults() -> None:
+    result = default_config()
+    chars_dict = dict(result.style.unicode_chars)
+    assert "⚠" in chars_dict
+    assert "→" in chars_dict
+    assert chars_dict["≥"] == "\\ensuremath{\\geq}"
+
+
+def test_unicode_chars_override_merges(tmp_path: Path) -> None:
+    """User config with unicode_chars overrides default via deep merge."""
+    data = dict(VALID_DATA)
+    data["style"] = {
+        **VALID_DATA["style"],
+        "unicode_chars": {"⚠": "\\ensuremath{\\bigtriangleup}"},
+    }
+    cfg = _write_config(tmp_path, data)
+    result = load_config(cfg)
+    chars_dict = dict(result.style.unicode_chars)
+    # Override applied
+    assert chars_dict["⚠"] == "\\ensuremath{\\bigtriangleup}"
+    # Other defaults inherited via deep merge
+    assert "→" in chars_dict
 
 
 def test_style_dir_field_loaded(tmp_path: Path) -> None:
@@ -237,3 +275,119 @@ def test_style_dir_field_loaded(tmp_path: Path) -> None:
     cfg = _write_config(tmp_path, data)
     result = load_config(cfg)
     assert result.style.style_dir == "/custom/styles/brand"
+
+
+# ── brand_colors ───────────────────────────────────────────────────────────
+
+
+def test_brand_colors_empty_by_default() -> None:
+    result = default_config()
+    assert result.style.brand_colors == ()
+
+
+def test_brand_colors_parsed(tmp_path: Path) -> None:
+    data = dict(VALID_DATA)
+    data["style"] = {
+        **VALID_DATA["style"],
+        "brand_colors": {"petrol": [20, 75, 95], "turkis": [0, 152, 160]},
+    }
+    cfg = _write_config(tmp_path, data)
+    result = load_config(cfg)
+    assert ("petrol", 20, 75, 95) in result.style.brand_colors
+    assert ("turkis", 0, 152, 160) in result.style.brand_colors
+
+
+def test_brand_colors_frozen(tmp_path: Path) -> None:
+    data = dict(VALID_DATA)
+    data["style"] = {
+        **VALID_DATA["style"],
+        "brand_colors": {"red": [255, 0, 0]},
+    }
+    cfg = _write_config(tmp_path, data)
+    result = load_config(cfg)
+    with pytest.raises(AttributeError):
+        result.style.brand_colors = ()  # type: ignore[misc]
+
+
+# ── heading_styles ─────────────────────────────────────────────────────────
+
+
+def test_heading_styles_empty_by_default() -> None:
+    result = default_config()
+    assert result.style.heading_styles == ()
+
+
+def test_heading_styles_parsed(tmp_path: Path) -> None:
+    data = dict(VALID_DATA)
+    data["style"] = {
+        **VALID_DATA["style"],
+        "heading_styles": [
+            {"level": "section", "size": "Large", "bold": True, "sans": True, "color": "petrol", "uppercase": False},
+            {"level": "subsection", "size": "large", "bold": True, "sans": True, "color": "turkis", "uppercase": True},
+        ],
+    }
+    cfg = _write_config(tmp_path, data)
+    result = load_config(cfg)
+    assert len(result.style.heading_styles) == 2
+    assert result.style.heading_styles[0] == ("section", "Large", True, True, "petrol", False)
+    assert result.style.heading_styles[1] == ("subsection", "large", True, True, "turkis", True)
+
+
+# ── title_style ────────────────────────────────────────────────────────────
+
+
+def test_title_style_none_by_default() -> None:
+    result = default_config()
+    assert result.style.title_style is None
+
+
+def test_title_style_parsed(tmp_path: Path) -> None:
+    data = dict(VALID_DATA)
+    data["style"] = {
+        **VALID_DATA["style"],
+        "title_style": {
+            "size": "huge",
+            "bold": True,
+            "sans": True,
+            "color": "petrol",
+            "date_visible": True,
+            "vskip_after": "2em",
+        },
+    }
+    cfg = _write_config(tmp_path, data)
+    result = load_config(cfg)
+    assert result.style.title_style == ("huge", True, True, "petrol", True, "2em")
+
+
+def test_title_style_date_hidden(tmp_path: Path) -> None:
+    data = dict(VALID_DATA)
+    data["style"] = {
+        **VALID_DATA["style"],
+        "title_style": {
+            "size": "LARGE",
+            "bold": False,
+            "sans": False,
+            "color": "",
+            "date_visible": False,
+            "vskip_after": "",
+        },
+    }
+    cfg = _write_config(tmp_path, data)
+    result = load_config(cfg)
+    assert result.style.title_style == ("LARGE", False, False, "", False, "")
+
+
+def test_logo_resolved_to_absolute(tmp_path: Path) -> None:
+    data = dict(VALID_DATA)
+    data["style"] = {**VALID_DATA["style"], "logo": "images/logo.png"}
+    cfg = _write_config(tmp_path, data)
+    result = load_config(cfg)
+    assert result.style.logo == str(tmp_path / "images/logo.png")
+
+
+def test_logo_absolute_preserved(tmp_path: Path) -> None:
+    data = dict(VALID_DATA)
+    data["style"] = {**VALID_DATA["style"], "logo": "/absolute/path/logo.png"}
+    cfg = _write_config(tmp_path, data)
+    result = load_config(cfg)
+    assert result.style.logo == "/absolute/path/logo.png"

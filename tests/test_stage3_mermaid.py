@@ -11,7 +11,7 @@ from obsidian_export.config import MermaidConfig
 from obsidian_export.pipeline.stage3_mermaid import render_mermaid_blocks
 
 
-def _make_config(mmdc_bin: Path, scale: int = 3) -> MermaidConfig:
+def _make_config(mmdc_bin: Path, scale: int) -> MermaidConfig:
     return MermaidConfig(mmdc_bin=mmdc_bin, scale=scale)
 
 
@@ -39,14 +39,14 @@ def _make_fake_mmdc(tmp_path: Path) -> Path:
 class TestRenderMermaidBlocks:
     def test_no_blocks_unchanged(self, tmp_path: Path) -> None:
         mmdc = _make_fake_mmdc(tmp_path)
-        config = _make_config(mmdc)
+        config = _make_config(mmdc, 3)
         text = "# Heading\n\nParagraph with no diagrams."
         result = render_mermaid_blocks(text, config, tmp_path)
         assert result == text
 
     def test_single_block_replaced(self, tmp_path: Path) -> None:
         mmdc = _make_fake_mmdc(tmp_path)
-        config = _make_config(mmdc)
+        config = _make_config(mmdc, 3)
         text = "Before.\n\n```mermaid\ngraph TB\n    A --> B\n```\n\nAfter."
         result = render_mermaid_blocks(text, config, tmp_path)
         assert "```mermaid" not in result
@@ -55,20 +55,20 @@ class TestRenderMermaidBlocks:
 
     def test_multiple_blocks_replaced(self, tmp_path: Path) -> None:
         mmdc = _make_fake_mmdc(tmp_path)
-        config = _make_config(mmdc)
+        config = _make_config(mmdc, 3)
         text = "```mermaid\ngraph TB\n    A --> B\n```\n\nMiddle text.\n\n```mermaid\ngraph LR\n    X --> Y\n```"
         result = render_mermaid_blocks(text, config, tmp_path)
         assert "```mermaid" not in result
         assert result.count("![Diagram") == 2
 
     def test_missing_mmdc_raises(self, tmp_path: Path) -> None:
-        config = _make_config(tmp_path / "nonexistent_mmdc")
+        config = _make_config(tmp_path / "nonexistent_mmdc", 3)
         with pytest.raises(FileNotFoundError, match="mmdc binary not found"):
             render_mermaid_blocks("```mermaid\ngraph TB\n    A-->B\n```", config, tmp_path)
 
     def test_image_files_written_to_tmpdir(self, tmp_path: Path) -> None:
         mmdc = _make_fake_mmdc(tmp_path)
-        config = _make_config(mmdc)
+        config = _make_config(mmdc, 3)
         out_dir = tmp_path / "output"
         out_dir.mkdir()
         text = "```mermaid\ngraph TB\n    A --> B\n```"
@@ -92,7 +92,7 @@ class TestRenderMermaidBlocks:
             encoding="utf-8",
         )
         mmdc.chmod(mmdc.stat().st_mode | stat.S_IEXEC)
-        config = _make_config(mmdc, scale=5)
+        config = _make_config(mmdc, 5)
         text = "```mermaid\ngraph TB\n    A --> B\n```"
         render_mermaid_blocks(text, config, tmp_path)
         args = calls_log.read_text()
@@ -100,13 +100,11 @@ class TestRenderMermaidBlocks:
         assert "5" in args
 
 
-@pytest.mark.skipif(
-    not shutil.which("mmdc"),
-    reason="mmdc not installed — skipping integration test",
-)
 def test_render_with_real_mmdc(tmp_path: Path) -> None:
-    mmdc_path = Path(shutil.which("mmdc"))  # type: ignore[arg-type]
-    config = _make_config(mmdc_path, scale=2)
+    mmdc_path = shutil.which("mmdc")
+    if mmdc_path is None:
+        pytest.skip("mmdc not installed — skipping integration test")
+    config = _make_config(Path(mmdc_path), 2)
     text = "```mermaid\ngraph TB\n    A --> B\n```"
     result = render_mermaid_blocks(text, config, tmp_path)
     assert "![Diagram" in result

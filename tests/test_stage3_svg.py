@@ -1,11 +1,11 @@
 """Tests for stage3_svg: SVG -> PDF conversion of image references."""
 
-import shutil
 import tempfile
 from pathlib import Path
 
 import pytest
 
+from obsidian_export.exceptions import SVGConversionError
 from obsidian_export.pipeline.stage3_svg import convert_svg_images
 
 MINIMAL_SVG = (
@@ -14,38 +14,34 @@ MINIMAL_SVG = (
     "</svg>"
 )
 
-HAS_RSVG = shutil.which("rsvg-convert") is not None
-
 
 def test_no_svg_refs_unchanged():
     text = "# Hello\n\nSome text without any images.\n\n![photo](pic.png)\n"
     with tempfile.TemporaryDirectory() as tmpdir:
-        result = convert_svg_images(text, Path(tmpdir))
+        result = convert_svg_images(text, Path(tmpdir), resource_path=None)
     assert result == text
 
 
-def test_missing_svg_file_unchanged():
+def test_missing_svg_file_raises():
     text = "![diagram](/tmp/nonexistent_abc123.svg)\n"
-    with tempfile.TemporaryDirectory() as tmpdir:
-        result = convert_svg_images(text, Path(tmpdir))
-    assert result == text
+    with tempfile.TemporaryDirectory() as tmpdir, pytest.raises(SVGConversionError, match="SVG file not found"):
+        convert_svg_images(text, Path(tmpdir), resource_path=None)
 
 
 def test_url_svg_unchanged():
     text = "![logo](https://example.com/foo.svg)\n"
     with tempfile.TemporaryDirectory() as tmpdir:
-        result = convert_svg_images(text, Path(tmpdir))
+        result = convert_svg_images(text, Path(tmpdir), resource_path=None)
     assert result == text
 
 
 def test_http_url_svg_unchanged():
     text = "![logo](http://example.com/bar.svg)\n"
     with tempfile.TemporaryDirectory() as tmpdir:
-        result = convert_svg_images(text, Path(tmpdir))
+        result = convert_svg_images(text, Path(tmpdir), resource_path=None)
     assert result == text
 
 
-@pytest.mark.skipif(not HAS_RSVG, reason="rsvg-convert not installed")
 def test_svg_ref_replaced_when_file_exists():
     with tempfile.TemporaryDirectory() as workdir:
         workdir = Path(workdir)
@@ -56,7 +52,7 @@ def test_svg_ref_replaced_when_file_exists():
         tmpdir.mkdir()
 
         text = f"![my diagram]({svg_file})\n"
-        result = convert_svg_images(text, tmpdir)
+        result = convert_svg_images(text, tmpdir, resource_path=None)
 
         assert "figure.svg" not in result
         assert "svg_1.pdf" in result
@@ -67,7 +63,6 @@ def test_svg_ref_replaced_when_file_exists():
         assert pdf_path.stat().st_size > 0
 
 
-@pytest.mark.skipif(not HAS_RSVG, reason="rsvg-convert not installed")
 def test_multiple_svgs_converted():
     with tempfile.TemporaryDirectory() as workdir:
         workdir = Path(workdir)
@@ -81,7 +76,7 @@ def test_multiple_svgs_converted():
         tmpdir.mkdir()
 
         text = f"![first]({svg_a})\n\nSome text.\n\n![second]({svg_b})\n"
-        result = convert_svg_images(text, tmpdir)
+        result = convert_svg_images(text, tmpdir, resource_path=None)
 
         assert "svg_1.pdf" in result
         assert "svg_2.pdf" in result
