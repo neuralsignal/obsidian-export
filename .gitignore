@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+.pixi/
+pixi.lock
+.mmdc/
+.pytest_cache/
+.hypothesis/

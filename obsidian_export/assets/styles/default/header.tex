@@ -1,0 +1,59 @@
+% Scale all images and figures to fit the text column width, maintain aspect ratio
+\usepackage{{graphicx}}
+\makeatletter
+\def\maxwidth{{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}}
+\def\maxheight{{\ifdim\Gin@nat@height>{image_max_height_ratio}\textheight {image_max_height_ratio}\textheight\else\Gin@nat@height\fi}}
+\makeatother
+\setkeys{{Gin}}{{width=\maxwidth,height=\maxheight,keepaspectratio}}
+
+% Pin figures to where they appear in the text (no floating)
+\usepackage{{float}}
+\floatplacement{{figure}}{{H}}
+
+% Nicer table rules
+\usepackage{{booktabs}}
+
+% Page-breaking tables with equal-width wrapping columns
+\usepackage{{xltabular}}
+
+% Unicode math symbols — XeTeX resolves from unicode-math font automatically
+\usepackage{{fontspec}}
+\usepackage{{unicode-math}}
+
+% Emoji substitutions (no emoji font bundled with tectonic; map to math symbols)
+\usepackage{{newunicodechar}}
+\usepackage{{amssymb}}
+\newunicodechar{{⚠}}{{\ensuremath{{\triangle}}}}
+\newunicodechar{{✅}}{{\ensuremath{{\checkmark}}}}
+\newunicodechar{{❌}}{{\ensuremath{{\times}}}}
+\newunicodechar{{🔴}}{{\ensuremath{{\bullet}}}}
+\newunicodechar{{🟡}}{{\ensuremath{{\circ}}}}
+\newunicodechar{{🟢}}{{\ensuremath{{\cdot}}}}
+% Unicode math symbols used in text mode (not covered by unicode-math in text mode)
+\newunicodechar{{≥}}{{\ensuremath{{\geq}}}}
+\newunicodechar{{≤}}{{\ensuremath{{\leq}}}}
+\newunicodechar{{≈}}{{\ensuremath{{\approx}}}}
+\newunicodechar{{→}}{{\ensuremath{{\rightarrow}}}}
+\newunicodechar{{←}}{{\ensuremath{{\leftarrow}}}}
+\newunicodechar{{↔}}{{\ensuremath{{\leftrightarrow}}}}
+\newunicodechar{{×}}{{\ensuremath{{\times}}}}
+
+% Callout boxes
+\usepackage[most]{{tcolorbox}}
+\definecolor{{noteblue}}{{RGB}}{{{note_r},{note_g},{note_b}}}
+\definecolor{{tipgreen}}{{RGB}}{{{tip_r},{tip_g},{tip_b}}}
+\definecolor{{warnyellow}}{{RGB}}{{{warn_r},{warn_g},{warn_b}}}
+\definecolor{{dangerred}}{{RGB}}{{{danger_r},{danger_g},{danger_b}}}
+\newtcolorbox{{calloutbox}}[2]{{
+  colback=#1!30,
+  colframe=#1!80!black,
+  fonttitle=\bfseries,
+  title=#2,
+  breakable,
+  left=6pt,right=6pt,top=4pt,bottom=4pt,
+  before skip=12pt,after skip=12pt
+}}
+
+{font_block}
+{line_spacing_block}
+{header_footer_block}

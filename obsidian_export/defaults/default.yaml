@@ -1,0 +1,40 @@
+# obsidian-export default configuration
+# Override any of these values in your profile or config file.
+
+mermaid:
+  mmdc_bin: "mmdc"
+  scale: 3
+
+obsidian:
+  wikilink_strategy: "text"
+  url_strategy: "footnote_long"
+  url_length_threshold: 60
+
+pandoc:
+  from_format: "gfm-tex_math_dollars"
+
+style:
+  name: "default"
+  geometry: "a4paper,margin=25mm"
+  fontsize: "10pt"
+  mainfont: ""
+  sansfont: ""
+  monofont: ""
+  linkcolor: "NavyBlue"
+  urlcolor: "NavyBlue"
+  line_spacing: 1.0
+  table_fontsize: "small"
+  image_max_height_ratio: 0.40
+  url_footnote_threshold: 60
+  header_left: ""
+  header_right: ""
+  footer_left: ""
+  footer_center: "\\thepage"
+  footer_right: ""
+  logo: ""
+  style_dir: ""
+  callout_colors:
+    note: [219, 234, 254]
+    tip: [220, 252, 231]
+    warning: [254, 243, 199]
+    danger: [254, 226, 226]

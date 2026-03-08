@@ -1,0 +1,21 @@
+[workspace]
+channels = ["conda-forge"]
+name = "obsidian-export"
+platforms = ["linux-64", "osx-arm64"]
+version = "0.1.0"
+
+[dependencies]
+python = ">=3.12,<3.15"
+pandoc = ">=3.5,<4"
+tectonic = ">=0.15,<0.16"
+nodejs = ">=20,<22"
+librsvg = ">=2.58,<3"
+python-build = ">=1.4.0,<2"
+hatchling = ">=1.28.0,<2"
+
+[pypi-dependencies]
+obsidian-export = {path = ".", editable = true}
+pyyaml = ">=6.0,<7"
+click = ">=8.0,<9"
+pytest = ">=8.0,<9"
+hypothesis = ">=6.0,<7"
