@@ -48,6 +48,11 @@ def _make_full_pipeline_config() -> ConvertConfig:
     """Build a ConvertConfig suitable for full-pipeline E2E tests."""
     cfg = default_config()
     mmdc_path = shutil.which("mmdc")
+    if mmdc_path is None:
+        # Check local npm install location (pixi run setup-mmdc)
+        local_mmdc = Path(__file__).parent.parent / ".mmdc" / "node_modules" / ".bin" / "mmdc"
+        if local_mmdc.exists():
+            mmdc_path = str(local_mmdc)
     if mmdc_path is not None:
         cfg = dataclasses.replace(
             cfg,

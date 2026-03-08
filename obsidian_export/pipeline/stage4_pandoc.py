@@ -49,11 +49,13 @@ def convert_to_pdf(
         header_tmp_path = Path(hf.name)
 
     try:
-        metadata_block = _yaml_metadata_block({
-            "title": title,
-            "table_fontsize": style_config.table_fontsize,
-            "url_footnote_threshold": style_config.url_footnote_threshold,
-        })
+        metadata_block = _yaml_metadata_block(
+            {
+                "title": title,
+                "table_fontsize": style_config.table_fontsize,
+                "url_footnote_threshold": style_config.url_footnote_threshold,
+            }
+        )
         text = metadata_block + text
 
         cmd = [
