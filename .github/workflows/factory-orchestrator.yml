@@ -28,7 +28,8 @@ jobs:
             --json number,labels \
             --jq '[.[] | select(
               (.labels | map(.name) | index("status:in-progress") | not) and
-              (.labels | map(.name) | index("status:pr-created") | not)
+              (.labels | map(.name) | index("status:pr-created") | not) and
+              (.labels | map(.name) | index("status:pr-draft") | not)
             ) | .number] | .[]')
 
           if [ -z "$ISSUES" ]; then
@@ -124,8 +125,12 @@ jobs:
 
           QUEUED=$(gh issue list --repo "$REPO" --label "claude:implement" --state open --json number --jq 'length')
           IN_PROGRESS=$(gh issue list --repo "$REPO" --label "status:in-progress" --state open --json number --jq 'length')
+          PR_DRAFT=$(gh issue list --repo "$REPO" --label "status:pr-draft" --state open --json number --jq 'length')
           PR_CREATED=$(gh issue list --repo "$REPO" --label "status:pr-created" --state open --json number --jq 'length')
           BLOCKED=$(gh issue list --repo "$REPO" --label "status:blocked" --state open --json number --jq 'length')
+          AUTOFIX_1=$(gh issue list --repo "$REPO" --label "autofix:1" --state open --json number --jq 'length')
+          AUTOFIX_2=$(gh issue list --repo "$REPO" --label "autofix:2" --state open --json number --jq 'length')
+          AUTOFIX_3=$(gh issue list --repo "$REPO" --label "autofix:3" --state open --json number --jq 'length')
 
           cat > /tmp/dashboard.md << EOF
           ## Factory Status ($(date -u '+%Y-%m-%d %H:%M UTC'))
@@ -134,7 +139,9 @@ jobs:
           |--------|-------|
           | Queued (claude:implement) | $QUEUED |
           | In Progress | $IN_PROGRESS |
+          | Draft PR (CI pending) | $PR_DRAFT |
           | PR Created (awaiting review) | $PR_CREATED |
+          | Auto-fix (attempt 1/2/3) | $AUTOFIX_1 / $AUTOFIX_2 / $AUTOFIX_3 |
           | Blocked | $BLOCKED |
 
           *Updated by factory-orchestrator (run [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}))*
