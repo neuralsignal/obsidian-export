@@ -6,7 +6,7 @@ Convert Obsidian-flavored Markdown to PDF and DOCX. Handles wikilinks, embeds, c
 
 ### conda-forge (recommended)
 
-Installs obsidian-export with all required system dependencies (pandoc, tectonic, librsvg) in one command:
+Installs obsidian-export with pandoc included automatically. You must separately install [tectonic](https://tectonic-typesetting.github.io/) >= 0.15 and [librsvg](https://wiki.gnome.org/Projects/LibRsvg) (not yet available on all platforms via conda-forge). Run `obsidian-export doctor` to check.
 
 ```bash
 conda install -c conda-forge obsidian-export
