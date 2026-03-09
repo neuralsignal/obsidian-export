@@ -1,0 +1,44 @@
+schema_version: 1
+
+context:
+  version: "0.2.4"
+
+package:
+  name: obsidian-export
+  version: ${{ version }}
+
+source:
+  url: https://pypi.org/packages/source/o/obsidian-export/obsidian_export-${{ version }}.tar.gz
+  sha256: PLACEHOLDER_FILL_AFTER_PYPI_PUBLISH
+
+build:
+  noarch: python
+  number: 0
+  script: python -m pip install . -vv --no-deps --no-build-isolation
+  entry_points:
+    - obsidian-export = obsidian_export.cli:main
+
+requirements:
+  host:
+    - python >=3.12
+    - pip
+    - hatchling
+  run:
+    - python >=3.12
+    - pyyaml >=6.0,<7
+    - click >=8.0,<9
+    - pandoc >=3.5
+    - tectonic >=0.15
+    - librsvg >=2.58
+
+test:
+  imports:
+    - obsidian_export
+  commands:
+    - obsidian-export --help
+
+about:
+  home: https://github.com/neuralsignal/obsidian-export
+  license: MIT
+  license_file: LICENSE
+  summary: Convert Obsidian-flavored Markdown to PDF and DOCX
