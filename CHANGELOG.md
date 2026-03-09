@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0 (unreleased)
+
+- Docs: add MkDocs + Material documentation site with auto-generated API reference
+- Docs: deploy to GitHub Pages at neuralsignal.github.io/obsidian-export/
+
 ## 0.2.4 (2026-03-09)
 
 - Feat: add conda-forge recipe (`recipe/recipe.yaml`) -- `conda install obsidian-export` pulls pandoc, tectonic, and librsvg automatically

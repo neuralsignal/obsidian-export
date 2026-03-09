@@ -1,0 +1,99 @@
+site_name: obsidian-export
+site_url: https://neuralsignal.github.io/obsidian-export/
+site_description: Convert Obsidian-flavored Markdown to PDF and DOCX
+repo_url: https://github.com/neuralsignal/obsidian-export
+repo_name: neuralsignal/obsidian-export
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+    - search.highlight
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          paths: [.]
+          options:
+            show_source: true
+            show_root_heading: true
+            show_symbol_type_heading: true
+            members_order: source
+            docstring_style: google
+            show_signature_annotations: true
+            separate_signature: true
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
+  - attr_list
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Quick Start: getting-started/quickstart.md
+  - User Guide:
+    - Profiles: user-guide/profiles.md
+    - Custom Styles: user-guide/custom-styles.md
+    - Configuration: user-guide/configuration.md
+  - Concepts:
+    - Pipeline Architecture: concepts/pipeline.md
+    - Syntax Support: concepts/syntax-support.md
+  - API Reference:
+    - Public API: reference/api.md
+    - Configuration: reference/config.md
+    - CLI: reference/cli.md
+    - Pipeline:
+      - Overview: reference/pipeline/index.md
+      - Stage 1 - Vault: reference/pipeline/stage1_vault.md
+      - Stage 2 - Preprocess: reference/pipeline/stage2_preprocess.md
+      - Stage 3 - Mermaid: reference/pipeline/stage3_mermaid.md
+      - Stage 3b - SVG: reference/pipeline/stage3_svg.md
+      - Stage 4 - Pandoc: reference/pipeline/stage4_pandoc.md
+      - LaTeX Header: reference/pipeline/latex_header.md
+    - Profiles: reference/profiles.md
+    - Exceptions: reference/exceptions.md
+  - Changelog: changelog.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/neuralsignal/obsidian-export
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/obsidian-export/
