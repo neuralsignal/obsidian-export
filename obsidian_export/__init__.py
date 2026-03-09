@@ -18,7 +18,7 @@ from obsidian_export.pipeline.stage1_vault import (
 )
 from obsidian_export.pipeline.stage2_preprocess import preprocess
 from obsidian_export.pipeline.stage3_mermaid import render_mermaid_blocks
-from obsidian_export.pipeline.stage3_svg import convert_svg_images
+from obsidian_export.pipeline.stage3_svg import convert_svg_images, convert_svg_images_to_png
 from obsidian_export.pipeline.stage4_pandoc import convert_to_docx, convert_to_pdf
 from obsidian_export.profiles import USER_STYLES_DIR
 
@@ -95,14 +95,17 @@ def run(
     with tempfile.TemporaryDirectory() as tmpdir:
         body = render_mermaid_blocks(body, config.mermaid, Path(tmpdir))
 
-        # Stage 3b: SVG -> PDF conversion (PDF output only)
+        # Stage 3b: SVG conversion for format compatibility
         if output_format == "pdf":
             body = convert_svg_images(body, Path(tmpdir), resource_path=input_path.parent)
+        else:
+            body = convert_svg_images_to_png(body, Path(tmpdir), resource_path=input_path.parent)
 
         # Stage 4: Pandoc conversion
+        style_dir = _resolve_style_dir(config.style)
+        filters_dir = Path(__file__).parent / "assets" / "filters"
+
         if output_format == "pdf":
-            style_dir = _resolve_style_dir(config.style)
-            filters_dir = Path(__file__).parent / "assets" / "filters"
             rendered_header = render_header(config.style, style_dir / "header.tex", title)
             convert_to_pdf(
                 body,
@@ -115,4 +118,15 @@ def run(
                 resource_path=input_path.parent,
             )
         else:
-            convert_to_docx(body, title, config.pandoc, output_path, resource_path=input_path.parent)
+            reference_doc_path = style_dir / "reference.docx"
+            reference_doc = reference_doc_path if reference_doc_path.exists() else None
+            convert_to_docx(
+                body,
+                title,
+                config.pandoc,
+                config.style,
+                filters_dir,
+                reference_doc,
+                output_path,
+                resource_path=input_path.parent,
+            )

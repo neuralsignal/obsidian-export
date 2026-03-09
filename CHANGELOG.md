@@ -1,7 +1,11 @@
 # Changelog
 
-## 0.3.0 (unreleased)
+## 0.3.0 (2026-03-09)
 
+- Feat: DOCX output now applies Lua filters for callout boxes, footnote promotion, and page breaks
+- Feat: SVG images are converted to PNG for DOCX compatibility
+- Feat: optional `reference_doc` support for custom DOCX styling via `--reference-doc`
+- Feat: `url_footnote_threshold` metadata injected into DOCX output for long-URL footnote promotion
 - Docs: add MkDocs + Material documentation site with auto-generated API reference
 - Docs: deploy to GitHub Pages at neuralsignal.github.io/obsidian-export/
 

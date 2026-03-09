@@ -5,6 +5,7 @@ import shutil
 from pathlib import Path
 
 import pytest
+import yaml
 
 from obsidian_export.config import PandocConfig, StyleConfig, default_config
 from obsidian_export.pipeline.latex_header import render_header
@@ -58,22 +59,16 @@ class TestYamlMetadataBlock:
         assert block.startswith("---\n")
         # yaml.dump will quote values containing colons — the key thing is
         # that re-parsing the block yields the original value.
-        import yaml
-
         parsed = yaml.safe_load(block.strip().strip("-"))
         assert parsed["title"] == "Memory: Knowledge folder consolidation"
 
     def test_title_with_special_chars(self) -> None:
         block = _yaml_metadata_block({"title": 'Azure Setup — "Obungi" CSP & MTF'})
-        import yaml
-
         parsed = yaml.safe_load(block.strip().strip("-"))
         assert parsed["title"] == 'Azure Setup — "Obungi" CSP & MTF'
 
     def test_multiple_keys(self) -> None:
         block = _yaml_metadata_block({"title": "Test", "table_fontsize": "small"})
-        import yaml
-
         parsed = yaml.safe_load(block.strip().strip("-"))
         assert parsed["title"] == "Test"
         assert parsed["table_fontsize"] == "small"
@@ -82,32 +77,73 @@ class TestYamlMetadataBlock:
 class TestConvertToDocx:
     def test_produces_file(self, tmp_path: Path) -> None:
         config = _make_pandoc_config()
+        style = _make_style_config()
         out = tmp_path / "output.docx"
-        convert_to_docx(SAMPLE_TEXT, "Test Document", config, out, resource_path=None)
+        convert_to_docx(SAMPLE_TEXT, "Test Document", config, style, FILTERS_DIR, None, out, resource_path=None)
         assert out.exists()
         assert out.stat().st_size > 0
 
     def test_creates_parent_dirs(self, tmp_path: Path) -> None:
         config = _make_pandoc_config()
+        style = _make_style_config()
         out = tmp_path / "nested" / "dir" / "output.docx"
-        convert_to_docx(SAMPLE_TEXT, "Test", config, out, resource_path=None)
+        convert_to_docx(SAMPLE_TEXT, "Test", config, style, FILTERS_DIR, None, out, resource_path=None)
         assert out.exists()
 
     def test_title_with_colon(self, tmp_path: Path) -> None:
         """Titles containing colons must not break conversion."""
         config = _make_pandoc_config()
+        style = _make_style_config()
         out = tmp_path / "output.docx"
-        convert_to_docx(SAMPLE_TEXT, "Memory: Knowledge folder consolidation", config, out, resource_path=None)
+        convert_to_docx(
+            SAMPLE_TEXT,
+            "Memory: Knowledge folder consolidation",
+            config,
+            style,
+            FILTERS_DIR,
+            None,
+            out,
+            resource_path=None,
+        )
         assert out.exists()
         assert out.stat().st_size > 0
 
     def test_output_is_docx_format(self, tmp_path: Path) -> None:
         config = _make_pandoc_config()
+        style = _make_style_config()
         out = tmp_path / "output.docx"
-        convert_to_docx(SAMPLE_TEXT, "Test", config, out, resource_path=None)
+        convert_to_docx(SAMPLE_TEXT, "Test", config, style, FILTERS_DIR, None, out, resource_path=None)
         # DOCX files start with PK (zip format)
         header = out.read_bytes()[:2]
         assert header == b"PK"
+
+    def test_missing_filter_raises(self, tmp_path: Path) -> None:
+        config = _make_pandoc_config()
+        style = _make_style_config()
+        out = tmp_path / "output.docx"
+        with pytest.raises(FileNotFoundError, match="Lua filter not found"):
+            convert_to_docx(SAMPLE_TEXT, "Test", config, style, tmp_path / "nonexistent", None, out, resource_path=None)
+
+    def test_callout_box_rendered(self, tmp_path: Path) -> None:
+        """Callout divs are processed via callout_boxes_docx.lua."""
+        config = _make_pandoc_config()
+        style = _make_style_config()
+        out = tmp_path / "output.docx"
+        text = SAMPLE_TEXT + "\n::: note\nThis is a note.\n:::\n"
+        convert_to_docx(text, "Test", config, style, FILTERS_DIR, None, out, resource_path=None)
+        assert out.exists()
+        assert out.stat().st_size > 0
+
+    def test_long_url_promoted_to_footnote(self, tmp_path: Path) -> None:
+        """Long URLs are promoted to footnotes via promote_footnotes.lua."""
+        config = _make_pandoc_config()
+        style = _make_style_config()
+        out = tmp_path / "output.docx"
+        long_url = "https://example.com/" + "a" * 80
+        text = f"[click here]({long_url})\n"
+        convert_to_docx(text, "Test", config, style, FILTERS_DIR, None, out, resource_path=None)
+        assert out.exists()
+        assert out.stat().st_size > 0
 
 
 @pytest.mark.skipif(not TECTONIC_AVAILABLE, reason="tectonic not installed -- skipping PDF tests")

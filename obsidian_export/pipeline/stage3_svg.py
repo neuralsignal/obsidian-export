@@ -1,4 +1,4 @@
-"""Stage 3b: Convert SVG image references to PDF for LaTeX compatibility."""
+"""Stage 3b: Convert SVG image references for LaTeX (PDF) and DOCX compatibility."""
 
 import re
 import subprocess
@@ -9,12 +9,12 @@ from obsidian_export.exceptions import SVGConversionError
 _IMG_REF_RE = re.compile(r"!\[([^\]]*)\]\(([^)]+\.svg)\)")
 
 
-def convert_svg_images(body: str, tmpdir: Path, resource_path: Path | None) -> str:
-    """Find SVG image references in markdown and convert them to PDF.
+def _convert_svg_images(body: str, tmpdir: Path, resource_path: Path | None, rsvg_format: str, file_ext: str) -> str:
+    """Find SVG image references in markdown and convert them via rsvg-convert.
 
     Only processes local file paths (not URLs). Each SVG is converted
-    via rsvg-convert to a PDF file in tmpdir, and the reference is updated.
-    Relative SVG paths are resolved against resource_path if provided.
+    to a file in tmpdir using the given rsvg_format and file_ext, and the
+    reference is updated. Relative SVG paths are resolved against resource_path.
     """
     counter = 0
 
@@ -37,19 +37,29 @@ def convert_svg_images(body: str, tmpdir: Path, resource_path: Path | None) -> s
             raise SVGConversionError(f"SVG file not found: {svg_path}")
 
         counter += 1
-        pdf_path = tmpdir / f"svg_{counter}.pdf"
+        out_path = tmpdir / f"svg_{counter}{file_ext}"
 
         subprocess.run(
             [
                 "rsvg-convert",
-                "--format=pdf",
-                f"--output={pdf_path}",
+                f"--format={rsvg_format}",
+                f"--output={out_path}",
                 str(svg_path),
             ],
             check=True,
             capture_output=True,
         )
 
-        return f"![{alt_text}]({pdf_path})"
+        return f"![{alt_text}]({out_path})"
 
     return _IMG_REF_RE.sub(replace_svg, body)
+
+
+def convert_svg_images(body: str, tmpdir: Path, resource_path: Path | None) -> str:
+    """Find SVG image references and convert to PDF for LaTeX/PDF output."""
+    return _convert_svg_images(body, tmpdir, resource_path, "pdf", ".pdf")
+
+
+def convert_svg_images_to_png(body: str, tmpdir: Path, resource_path: Path | None) -> str:
+    """Find SVG image references and convert to PNG for DOCX output."""
+    return _convert_svg_images(body, tmpdir, resource_path, "png", ".png")
