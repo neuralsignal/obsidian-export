@@ -28,7 +28,7 @@ With pip, you must separately install [pandoc](https://pandoc.org/) >= 3.5, [tec
 
 ### Mermaid Support (optional)
 
-For Mermaid diagram rendering, install [mermaid-cli](https://github.com/mermaid-js/mermaid-cli):
+For Mermaid diagram rendering, install [Node.js](https://nodejs.org/) >= 20 and [mermaid-cli](https://github.com/mermaid-js/mermaid-cli):
 
 ```bash
 npm install -g @mermaid-js/mermaid-cli
