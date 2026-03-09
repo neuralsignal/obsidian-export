@@ -2,25 +2,36 @@
 
 Convert Obsidian-flavored Markdown to PDF and DOCX. Handles wikilinks, embeds, callouts, Mermaid diagrams, and frontmatter — producing clean, professional documents via a 5-stage pipeline (vault ops → preprocess → mermaid → SVG → pandoc).
 
-## Install
+## Installation
+
+### conda-forge (recommended)
+
+Installs obsidian-export with all required system dependencies (pandoc, tectonic, librsvg) in one command:
+
+```bash
+conda install -c conda-forge obsidian-export
+```
+
+Or with [pixi](https://pixi.sh/):
+
+```bash
+pixi global install obsidian-export
+```
+
+### pip
 
 ```bash
 pip install obsidian-export
 ```
 
-### System Dependencies
+With pip, you must separately install [pandoc](https://pandoc.org/) >= 3.5, [tectonic](https://tectonic-typesetting.github.io/) >= 0.15, and [librsvg](https://wiki.gnome.org/Projects/LibRsvg). Run `obsidian-export doctor` to check.
 
-| Dependency | Required | Purpose |
-|-----------|----------|---------|
-| [pandoc](https://pandoc.org/) >= 3.5 | Yes | Markdown to PDF/DOCX conversion |
-| [tectonic](https://tectonic-typesetting.github.io/) >= 0.15 | Yes (PDF) | XeLaTeX PDF engine |
-| [Node.js](https://nodejs.org/) >= 20 | Optional | Runtime for Mermaid CLI |
-| [librsvg](https://wiki.gnome.org/Projects/LibRsvg) | Optional | SVG to PDF conversion |
+### Mermaid Support (optional)
 
-Check your setup:
+For Mermaid diagram rendering, install [Node.js](https://nodejs.org/) >= 20 and [mermaid-cli](https://github.com/mermaid-js/mermaid-cli):
 
 ```bash
-obsidian-export doctor
+npm install -g @mermaid-js/mermaid-cli
 ```
 
 ## Quick Start

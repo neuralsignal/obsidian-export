@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.4 (2026-03-09)
+
+- Feat: add conda-forge recipe (`recipe/recipe.yaml`) -- `conda install obsidian-export` pulls pandoc, tectonic, and librsvg automatically
+- Docs: rewrite Installation section with conda-forge/pixi as primary install method
+
 ## 0.2.3 (2026-03-09)
 
 - CI: add factory-orchestrator workflow to sweep orphaned issues (GITHUB_TOKEN cascade fix)
