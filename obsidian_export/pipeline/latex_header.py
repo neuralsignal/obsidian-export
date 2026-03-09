@@ -109,11 +109,11 @@ def _build_unicode_char_block(unicode_chars: tuple[tuple[str, str], ...]) -> str
 def _build_font_block(mainfont: str, sansfont: str, monofont: str) -> str:
     lines = []
     if mainfont:
-        lines.append(f"\\setmainfont{{{mainfont}}}")
+        lines.append(f"\\setmainfont{{{_escape_latex(mainfont)}}}")
     if sansfont:
-        lines.append(f"\\setsansfont{{{sansfont}}}")
+        lines.append(f"\\setsansfont{{{_escape_latex(sansfont)}}}")
     if monofont:
-        lines.append(f"\\setmonofont{{{monofont}}}")
+        lines.append(f"\\setmonofont{{{_escape_latex(monofont)}}}")
     return "\n".join(lines)
 
 
@@ -129,7 +129,7 @@ def _build_brand_colors_block(brand_colors: tuple[tuple[str, int, int, int], ...
         return ""
     lines = []
     for name, r, g, b in brand_colors:
-        lines.append(f"\\definecolor{{{name}}}{{RGB}}{{{r},{g},{b}}}")
+        lines.append(f"\\definecolor{{{_escape_latex(name)}}}{{RGB}}{{{r},{g},{b}}}")
     return "\n".join(lines)
 
 
@@ -140,17 +140,18 @@ def _build_heading_styles_block(heading_styles: tuple[tuple[str, str, bool, bool
     lines = ["\\usepackage{titlesec}"]
     for level, size, bold, sans, color, uppercase in heading_styles:
         parts = ["\\normalfont"]
-        parts.append(f"\\{size}")
+        parts.append(f"\\{_escape_latex(size)}")
         if bold:
             parts.append("\\bfseries")
         if sans:
             parts.append("\\sffamily")
         if color:
-            parts.append(f"\\color{{{color}}}")
+            parts.append(f"\\color{{{_escape_latex(color)}}}")
         fmt = "".join(parts)
         # For the content argument (last {}), use \\MakeUppercase if uppercase
         content_arg = "{\\MakeUppercase}" if uppercase else "{}"
-        lines.append(f"\\titleformat{{\\{level}}}\n  {{{fmt}}}\n  {{\\the{level}}}{{1em}}{content_arg}")
+        escaped_level = _escape_latex(level)
+        lines.append(f"\\titleformat{{\\{escaped_level}}}\n  {{{fmt}}}\n  {{\\the{escaped_level}}}{{1em}}{content_arg}")
     return "\n\n".join(lines)
 
 
@@ -160,13 +161,13 @@ def _build_title_style_block(title_style: tuple[str, bool, bool, str, bool, str]
         return ""
     size, bold, sans, color, date_visible, vskip_after = title_style
     title_parts = []
-    title_parts.append(f"\\{size}")
+    title_parts.append(f"\\{_escape_latex(size)}")
     if bold:
         title_parts.append("\\bfseries")
     if sans:
         title_parts.append("\\sffamily")
     if color:
-        title_parts.append(f"\\color{{{color}}}")
+        title_parts.append(f"\\color{{{_escape_latex(color)}}}")
     title_fmt = "".join(title_parts)
 
     lines = [
