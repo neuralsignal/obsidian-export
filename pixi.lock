@@ -1289,8 +1289,8 @@ packages:
   timestamp: 1771368175963
 - pypi: ./
   name: obsidian-export
-  version: 0.2.2
-  sha256: d5855ff39f26f2c5464023eb7a7133fe5bbbfc93cb49f78c0d734b3de8149a91
+  version: 0.2.3
+  sha256: 4789694c813f0e34efbe53d50d01f6a08c9f6eec17a959c2f8ea154abb5de156
   requires_dist:
   - pyyaml>=6.0,<7
   - click>=8.0,<9
