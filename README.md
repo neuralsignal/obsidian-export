@@ -2,6 +2,8 @@
 
 Convert Obsidian-flavored Markdown to PDF and DOCX. Handles wikilinks, embeds, callouts, Mermaid diagrams, and frontmatter — producing clean, professional documents via a 5-stage pipeline (vault ops → preprocess → mermaid → SVG → pandoc).
 
+**[Documentation](https://neuralsignal.github.io/obsidian-export/)** | **[PyPI](https://pypi.org/project/obsidian-export/)** | **[Changelog](https://neuralsignal.github.io/obsidian-export/changelog/)**
+
 ## Installation
 
 ### conda-forge (recommended)
