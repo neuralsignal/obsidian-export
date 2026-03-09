@@ -90,6 +90,9 @@ def _load_default_yaml() -> dict:
 
 def _build_config(raw: dict, config_dir: Path | None) -> ConvertConfig:
     """Build ConvertConfig from a raw dict. Resolve relative paths if config_dir given."""
+    if config_dir is not None and not config_dir.is_absolute():
+        config_dir = config_dir.resolve()
+
     mermaid_raw = raw["mermaid"]
     mmdc_bin_raw = Path(mermaid_raw["mmdc_bin"])
     if config_dir and not mmdc_bin_raw.is_absolute():
@@ -108,12 +111,12 @@ def _build_config(raw: dict, config_dir: Path | None) -> ConvertConfig:
     # Resolve relative style_dir against config_dir (same as mmdc_bin)
     style_dir_raw = style_raw["style_dir"]
     if style_dir_raw and config_dir and not Path(style_dir_raw).is_absolute():
-        style_dir_raw = str(config_dir / style_dir_raw)
+        style_dir_raw = str((config_dir / style_dir_raw).resolve())
 
     # Resolve logo path relative to config_dir if non-empty and not absolute
     logo_raw = style_raw["logo"]
     if logo_raw and config_dir and not Path(logo_raw).is_absolute():
-        logo_raw = str(config_dir / logo_raw)
+        logo_raw = str((config_dir / logo_raw).resolve())
 
     # Parse brand_colors: dict {name: [r,g,b]} -> tuple of (name, r, g, b)
     brand_colors_raw = style_raw.get("brand_colors", {}) or {}
