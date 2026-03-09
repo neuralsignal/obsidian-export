@@ -1,6 +1,6 @@
 [project]
 name = "obsidian-export"
-version = "0.2.4"
+version = "0.3.0"
 description = "Convert Obsidian-flavored Markdown to PDF and DOCX via a 5-stage pipeline"
 readme = "README.md"
 license = "MIT"

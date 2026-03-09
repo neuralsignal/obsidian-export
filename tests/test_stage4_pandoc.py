@@ -5,6 +5,7 @@ import shutil
 from pathlib import Path
 
 import pytest
+import yaml
 
 from obsidian_export.config import PandocConfig, StyleConfig, default_config
 from obsidian_export.pipeline.latex_header import render_header
@@ -58,22 +59,16 @@ class TestYamlMetadataBlock:
         assert block.startswith("---\n")
         # yaml.dump will quote values containing colons — the key thing is
         # that re-parsing the block yields the original value.
-        import yaml
-
         parsed = yaml.safe_load(block.strip().strip("-"))
         assert parsed["title"] == "Memory: Knowledge folder consolidation"
 
     def test_title_with_special_chars(self) -> None:
         block = _yaml_metadata_block({"title": 'Azure Setup — "Obungi" CSP & MTF'})
-        import yaml
-
         parsed = yaml.safe_load(block.strip().strip("-"))
         assert parsed["title"] == 'Azure Setup — "Obungi" CSP & MTF'
 
     def test_multiple_keys(self) -> None:
         block = _yaml_metadata_block({"title": "Test", "table_fontsize": "small"})
-        import yaml
-
         parsed = yaml.safe_load(block.strip().strip("-"))
         assert parsed["title"] == "Test"
         assert parsed["table_fontsize"] == "small"
