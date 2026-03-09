@@ -8,6 +8,7 @@ from hypothesis import strategies as st
 from obsidian_export.config import ObsidianConfig, default_config
 from obsidian_export.pipeline.stage2_preprocess import (
     convert_callouts,
+    count_headings,
     escape_dollar_signs,
     normalize_line_endings,
     preprocess,
@@ -140,6 +141,32 @@ class TestNormalizeLineEndings:
         result = normalize_line_endings(text)
         assert "Hello" in result
         assert "World" in result
+
+
+# ── count_headings ───────────────────────────────────────────────────────────
+
+
+class TestCountHeadings:
+    def test_no_headings(self) -> None:
+        assert count_headings("No headings here.\nJust text.") == 0
+
+    def test_single_heading(self) -> None:
+        assert count_headings("# Title\nSome text.") == 1
+
+    def test_multiple_heading_levels(self) -> None:
+        text = "# H1\n## H2\n### H3\ntext\n#### H4"
+        assert count_headings(text) == 4
+
+    def test_indented_heading(self) -> None:
+        assert count_headings("  # Indented heading") == 1
+
+    def test_empty_string(self) -> None:
+        assert count_headings("") == 0
+
+    def test_hash_in_code_counted(self) -> None:
+        # count_headings is a simple text counter, not Markdown-aware
+        text = "# Real heading\n```\n# comment in code\n```"
+        assert count_headings(text) == 2
 
 
 # ── preprocess (integration) ─────────────────────────────────────────────────

@@ -147,6 +147,14 @@ def strip_variation_selectors(text: str) -> str:
     return _VARIATION_SELECTOR_RE.sub("", text)
 
 
+def count_headings(text: str) -> int:
+    """Count the number of markdown headings in a text string.
+
+    A heading is any line whose stripped content starts with ``#``.
+    """
+    return sum(1 for line in text.split("\n") if line.lstrip().startswith("#"))
+
+
 def preprocess(text: str, config: ObsidianConfig) -> str:
     """Apply all Stage 2 transforms in order."""
     text = normalize_line_endings(text)
