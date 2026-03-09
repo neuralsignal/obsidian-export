@@ -15,3 +15,7 @@ class CircularEmbedError(ObsidianExportError):
 
 class SVGConversionError(ObsidianExportError):
     """SVG file not found or conversion failed."""
+
+
+class PathTraversalError(ObsidianExportError):
+    """Embed path resolves outside the vault root (path traversal attempt)."""
