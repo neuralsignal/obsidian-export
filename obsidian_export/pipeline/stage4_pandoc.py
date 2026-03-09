@@ -90,13 +90,30 @@ def convert_to_docx(
     text: str,
     title: str,
     pandoc_config: PandocConfig,
+    style_config: StyleConfig,
+    filters_dir: Path,
+    reference_doc: Path | None,
     output_path: Path,
     resource_path: Path | None,
 ) -> None:
     """Convert preprocessed markdown text to DOCX via pandoc."""
+    lua_filters = [
+        filters_dir / "callout_boxes_docx.lua",
+        filters_dir / "promote_footnotes.lua",
+        filters_dir / "newpage_on_rule_docx.lua",
+    ]
+    for f in lua_filters:
+        if not f.exists():
+            raise FileNotFoundError(f"Lua filter not found: {f}")
+
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    metadata_block = _yaml_metadata_block({"title": title})
+    metadata_block = _yaml_metadata_block(
+        {
+            "title": title,
+            "url_footnote_threshold": style_config.url_footnote_threshold,
+        }
+    )
     text = metadata_block + text
 
     cmd = [
@@ -105,8 +122,12 @@ def convert_to_docx(
         "--to=docx",
         f"--output={output_path}",
     ]
+    if reference_doc is not None:
+        cmd.append(f"--reference-doc={reference_doc}")
     if resource_path is not None:
         cmd.append(f"--resource-path={resource_path}")
+    for f in lua_filters:
+        cmd.append(f"--lua-filter={f}")
 
     subprocess.run(
         cmd,

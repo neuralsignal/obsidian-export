@@ -1,4 +1,4 @@
-"""Tests for stage3_svg: SVG -> PDF conversion of image references."""
+"""Tests for stage3_svg: SVG -> PDF/PNG conversion of image references."""
 
 import tempfile
 from pathlib import Path
@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from obsidian_export.exceptions import SVGConversionError
-from obsidian_export.pipeline.stage3_svg import convert_svg_images
+from obsidian_export.pipeline.stage3_svg import convert_svg_images, convert_svg_images_to_png
 
 MINIMAL_SVG = (
     '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">'
@@ -82,3 +82,41 @@ def test_multiple_svgs_converted():
         assert "svg_2.pdf" in result
         assert (tmpdir / "svg_1.pdf").exists()
         assert (tmpdir / "svg_2.pdf").exists()
+
+
+class TestConvertSvgImagesToPng:
+    def test_no_svg_refs_unchanged(self):
+        text = "# Hello\n\nSome text without any images.\n\n![photo](pic.png)\n"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = convert_svg_images_to_png(text, Path(tmpdir), resource_path=None)
+        assert result == text
+
+    def test_missing_svg_file_raises(self):
+        text = "![diagram](/tmp/nonexistent_abc123.svg)\n"
+        with tempfile.TemporaryDirectory() as tmpdir, pytest.raises(SVGConversionError, match="SVG file not found"):
+            convert_svg_images_to_png(text, Path(tmpdir), resource_path=None)
+
+    def test_url_svg_unchanged(self):
+        text = "![logo](https://example.com/foo.svg)\n"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = convert_svg_images_to_png(text, Path(tmpdir), resource_path=None)
+        assert result == text
+
+    def test_svg_ref_replaced_with_png(self):
+        with tempfile.TemporaryDirectory() as workdir:
+            workdir = Path(workdir)
+            svg_file = workdir / "figure.svg"
+            svg_file.write_text(MINIMAL_SVG)
+
+            tmpdir = workdir / "out"
+            tmpdir.mkdir()
+
+            text = f"![my diagram]({svg_file})\n"
+            result = convert_svg_images_to_png(text, tmpdir, resource_path=None)
+
+            assert "figure.svg" not in result
+            assert "svg_1.png" in result
+
+            png_path = tmpdir / "svg_1.png"
+            assert png_path.exists()
+            assert png_path.stat().st_size > 0
