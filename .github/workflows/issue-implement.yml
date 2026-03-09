@@ -94,7 +94,7 @@ jobs:
       - name: Create PR
         if: success()
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.FACTORY_PAT }}
         run: |
           # Check if branch has commits ahead of main
           if git log origin/main..${{ steps.branch.outputs.branch }} --oneline | head -1 | grep -q .; then
