@@ -6,7 +6,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from obsidian_export.exceptions import CircularEmbedError, EmbedNotFoundError
+from obsidian_export.exceptions import CircularEmbedError, EmbedNotFoundError, PathTraversalError
 from obsidian_export.pipeline.stage1_vault import (
     clean_frontmatter,
     parse_frontmatter,
@@ -283,3 +283,23 @@ class TestResolveEmbeds:
         result = resolve_embeds(text, tmp_path, tmp_path / "note.md", 10)
         assert "Section A content." in result
         assert "Section B content." not in result
+
+    def test_path_traversal_note_raises(self, tmp_path: Path) -> None:
+        """Embed paths that escape vault root must raise PathTraversalError."""
+        vault = tmp_path / "vault"
+        vault.mkdir()
+        outside = tmp_path / "secret.md"
+        outside.write_text("secret contents", encoding="utf-8")
+        text = "![[../secret]]"
+        with pytest.raises(PathTraversalError):
+            resolve_embeds(text, vault, vault / "note.md", 10)
+
+    def test_path_traversal_image_raises(self, tmp_path: Path) -> None:
+        """Image embed paths that escape vault root must raise PathTraversalError."""
+        vault = tmp_path / "vault"
+        vault.mkdir()
+        outside = tmp_path / "secret.png"
+        outside.write_bytes(b"\x89PNG\r\n\x1a\n")
+        text = "![[../secret.png]]"
+        with pytest.raises(PathTraversalError):
+            resolve_embeds(text, vault, vault / "note.md", 10)

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import yaml
 
-from obsidian_export.exceptions import CircularEmbedError, EmbedNotFoundError
+from obsidian_export.exceptions import CircularEmbedError, EmbedNotFoundError, PathTraversalError
 
 _OBSIDIAN_KEYS = frozenset(["aliases", "tags", "cssclass", "publish", "banner", "cssclasses"])
 
@@ -124,12 +124,16 @@ def _resolve_embeds_recursive(
     if depth > max_embed_depth:
         return content
 
+    vault_resolved = vault_root.resolve()
+
     def replace_embed(m: re.Match) -> str:
         raw = m.group(1).strip()
 
         # Image embed check
         if re.search(r"\.(png|jpg|jpeg|gif|svg|webp)$", raw, re.IGNORECASE):
-            img_path = vault_root / raw
+            img_path = (vault_root / raw).resolve()
+            if not img_path.is_relative_to(vault_resolved):
+                raise PathTraversalError(f"Embed path escapes vault root: {raw!r} resolved to {img_path}")
             if img_path.exists():
                 return f"![]({img_path})"
             # Obsidian resolves by filename anywhere in vault — search subdirs
@@ -156,6 +160,8 @@ def _resolve_embeds_recursive(
             raise EmbedNotFoundError(f"Embed not found: {raw!r}. Searched: {vault_root}, {current_file.parent}")
 
         note_path = note_path.resolve()
+        if not note_path.is_relative_to(vault_resolved):
+            raise PathTraversalError(f"Embed path escapes vault root: {raw!r} resolved to {note_path}")
         if note_path in visited:
             raise CircularEmbedError(f"Circular embed chain detected: {raw!r}")
 
