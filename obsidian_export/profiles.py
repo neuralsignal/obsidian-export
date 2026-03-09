@@ -1,10 +1,12 @@
 """Profile management for obsidian-export."""
 
+import re
 from pathlib import Path
 
 import yaml
 
 from obsidian_export.config import ConvertConfig, load_config
+from obsidian_export.exceptions import ProfileNameError
 
 PROFILE_DIR = Path.home() / ".obsidian-export" / "profiles"
 USER_STYLES_DIR = Path.home() / ".obsidian-export" / "styles"
@@ -25,9 +27,23 @@ def list_profiles() -> list[str]:
     return sorted(p.stem for p in PROFILE_DIR.glob("*.yaml"))
 
 
+_SAFE_NAME_RE = re.compile(r"^[a-zA-Z0-9_-]+$")
+
+
 def get_profile_path(name: str) -> Path:
-    """Get the path to a profile YAML file."""
-    return PROFILE_DIR / f"{name}.yaml"
+    """Get the path to a profile YAML file.
+
+    Raises ProfileNameError if the name contains unsafe characters or
+    path traversal sequences that would resolve outside PROFILE_DIR.
+    """
+    if not _SAFE_NAME_RE.match(name):
+        raise ProfileNameError(
+            f"Invalid profile name {name!r}: only alphanumeric characters, hyphens, and underscores are allowed."
+        )
+    path = (PROFILE_DIR / f"{name}.yaml").resolve()
+    if not path.is_relative_to(PROFILE_DIR.resolve()):
+        raise ProfileNameError(f"Invalid profile name (path traversal detected): {name!r}")
+    return path
 
 
 def load_profile(name: str) -> ConvertConfig:

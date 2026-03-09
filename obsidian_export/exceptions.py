@@ -17,5 +17,9 @@ class SVGConversionError(ObsidianExportError):
     """SVG file not found or conversion failed."""
 
 
+class ProfileNameError(ObsidianExportError):
+    """Profile name is invalid or contains path traversal sequences."""
+
+
 class PathTraversalError(ObsidianExportError):
     """Embed path resolves outside the vault root (path traversal attempt)."""
