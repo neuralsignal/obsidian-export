@@ -62,7 +62,7 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          claude_args: "--model claude-sonnet-4-6 --max-turns 50 --allowedTools Read,Write,Edit,Glob,Grep,Bash"
+          claude_args: "--model claude-opus-4-6 --max-turns 50 --allowedTools Read,Write,Edit,Glob,Grep,Bash"
           prompt: |
             You are implementing a GitHub issue as a code change.
             Read CLAUDE.md for project conventions, build commands, and standards.
@@ -94,11 +94,12 @@ jobs:
       - name: Create PR
         if: success()
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.FACTORY_PAT }}
         run: |
           # Check if branch has commits ahead of main
           if git log origin/main..${{ steps.branch.outputs.branch }} --oneline | head -1 | grep -q .; then
             gh pr create \
+              --draft \
               --title "$(echo '${{ github.event.issue.title }}' | head -c 70)" \
               --body "Closes #${{ github.event.issue.number }}
 
@@ -118,7 +119,7 @@ jobs:
             gh issue edit ${{ github.event.issue.number }} \
               --repo ${{ github.repository }} \
               --remove-label status:in-progress \
-              --add-label status:pr-created
+              --add-label status:pr-draft
           else
             echo "No commits on branch -- nothing to create PR for."
           fi

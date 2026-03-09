@@ -81,6 +81,19 @@ class TestBuildFontBlock:
         result = _build_font_block("", "", "Courier New")
         assert result == "\\setmonofont{Courier New}"
 
+    def test_injection_in_mainfont_escaped(self) -> None:
+        result = _build_font_block("}\\write18{rm -rf /}", "", "")
+        assert "\\write18" not in result
+        assert "\\textbackslash" in result
+
+    def test_injection_in_sansfont_escaped(self) -> None:
+        result = _build_font_block("", "}\\write18{bad}", "")
+        assert "\\write18" not in result
+
+    def test_injection_in_monofont_escaped(self) -> None:
+        result = _build_font_block("", "", "font$hack")
+        assert "\\$" in result
+
 
 class TestBuildLineSpacingBlock:
     def test_one_point_zero_returns_empty(self) -> None:
@@ -154,6 +167,11 @@ class TestBuildBrandColorsBlock:
         assert "\\definecolor{mint}{RGB}{109,185,160}" in result
         assert result.count("\n") == 2
 
+    def test_injection_in_color_name_escaped(self) -> None:
+        result = _build_brand_colors_block((("bad}\\write18{cmd", 0, 0, 0),))
+        assert "\\write18" not in result
+        assert "\\textbackslash" in result
+
 
 class TestBuildHeadingStylesBlock:
     def test_empty_returns_empty(self) -> None:
@@ -191,6 +209,21 @@ class TestBuildHeadingStylesBlock:
         assert "\\titleformat{\\subsection}" in result
         assert "\\titleformat{\\subsubsection}" in result
 
+    def test_injection_in_level_escaped(self) -> None:
+        styles = (("section}\\write18{cmd", "Large", False, False, "", False),)
+        result = _build_heading_styles_block(styles)
+        assert "\\write18" not in result
+
+    def test_injection_in_size_escaped(self) -> None:
+        styles = (("section", "Large}\\write18{cmd", False, False, "", False),)
+        result = _build_heading_styles_block(styles)
+        assert "\\write18" not in result
+
+    def test_injection_in_color_escaped(self) -> None:
+        styles = (("section", "Large", False, False, "petrol}\\write18{cmd", False),)
+        result = _build_heading_styles_block(styles)
+        assert "\\write18" not in result
+
 
 class TestBuildTitleStyleBlock:
     def test_none_returns_empty(self) -> None:
@@ -221,6 +254,16 @@ class TestBuildTitleStyleBlock:
         ts = ("huge", True, True, "turkis", True, "1em")
         result = _build_title_style_block(ts)
         assert "\\color{turkis}" in result
+
+    def test_injection_in_size_escaped(self) -> None:
+        ts = ("huge}\\write18{cmd", False, False, "", False, "")
+        result = _build_title_style_block(ts)
+        assert "\\write18" not in result
+
+    def test_injection_in_color_escaped(self) -> None:
+        ts = ("huge", False, False, "petrol}\\write18{cmd", False, "")
+        result = _build_title_style_block(ts)
+        assert "\\write18" not in result
 
 
 class TestTruncateTitle:
