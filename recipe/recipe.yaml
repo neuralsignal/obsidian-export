@@ -2,6 +2,7 @@ schema_version: 1
 
 context:
   version: "0.2.4"
+  python_min: "3.12"
 
 package:
   name: obsidian-export
@@ -20,25 +21,38 @@ build:
 
 requirements:
   host:
-    - python >=3.12
+    - python ${{ python_min }}.*
     - pip
     - hatchling
   run:
-    - python >=3.12
+    - python >=${{ python_min }}
     - pyyaml >=6.0,<7
     - click >=8.0,<9
     - pandoc >=3.5
     - tectonic >=0.15
     - librsvg >=2.58
 
-test:
-  imports:
-    - obsidian_export
-  commands:
-    - obsidian-export --help
+tests:
+  - python:
+      imports:
+        - obsidian_export
+      pip_check: true
+      python_version: ${{ python_min }}.*
+  - script:
+      - obsidian-export --help
 
 about:
-  home: https://github.com/neuralsignal/obsidian-export
+  homepage: https://github.com/neuralsignal/obsidian-export
+  repository: https://github.com/neuralsignal/obsidian-export
+  summary: Convert Obsidian-flavored Markdown to PDF and DOCX
+  description: |
+    Convert Obsidian-flavored Markdown to PDF and DOCX. Handles wikilinks,
+    embeds, callouts, Mermaid diagrams, and frontmatter via a 5-stage pipeline.
+    When installed from conda-forge, all system dependencies (pandoc, tectonic,
+    librsvg) are included automatically.
   license: MIT
   license_file: LICENSE
-  summary: Convert Obsidian-flavored Markdown to PDF and DOCX
+
+extra:
+  recipe-maintainers:
+    - neuralsignal
