@@ -9,8 +9,7 @@ package:
 
 source:
   url: https://pypi.org/packages/source/o/obsidian-export/obsidian_export-${{ version }}.tar.gz
-  # TODO: fill after v0.2.4 is published to PyPI
-  sha256: PLACEHOLDER_FILL_AFTER_PYPI_PUBLISH
+  sha256: 7a0ff610c9182917096e2d0477692c3571d6f537b3c8d22142fb7dcad2315d77
 
 build:
   noarch: python
