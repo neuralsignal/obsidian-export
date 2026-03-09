@@ -18,6 +18,15 @@ Or with [pixi](https://pixi.sh/):
 pixi global install obsidian-export
 ```
 
+> **Note:** The conda-forge package is pending review. Until it's accepted, install from source using pixi:
+>
+> ```bash
+> git clone https://github.com/neuralsignal/obsidian-export.git
+> cd obsidian-export
+> pixi install
+> pixi run obsidian-export --help
+> ```
+
 ### pip
 
 ```bash
