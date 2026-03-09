@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.3 (2026-03-09)
+
+- CI: add factory-orchestrator workflow to sweep orphaned issues (GITHUB_TOKEN cascade fix)
+- CI: increase dep-audit max-turns from 20 to 30 (match template default)
+- CI: add auto-tag workflow for automatic releases on merge to main
+
+## 0.2.2 (2026-03-08)
+
+- Chore: sync pixi.toml version to match pyproject.toml
+
+## 0.2.1 (2026-03-08)
+
+- Fix: bump version for PyPI release
+
 ## 0.2.0 (2026-03-08)
 
 - Fix: callouts now render as colored tcolorbox boxes instead of plain blockquotes — stage1 no longer strips `[!TYPE]` labels, allowing stage2's `convert_callouts()` to process them correctly
