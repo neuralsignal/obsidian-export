@@ -79,7 +79,11 @@ Non-negotiable principles. Violating these is a bug.
 | `status:triaged` | Issue has been triaged |
 | `status:in-progress` | Claude is working on this |
 | `status:pr-created` | PR created, awaiting review |
+| `status:pr-draft` | Draft PR created, CI pending |
 | `status:blocked` | Implementation blocked (see comments) |
+| `autofix:1` | First auto-fix attempt |
+| `autofix:2` | Second auto-fix attempt |
+| `autofix:3` | Third (final) auto-fix attempt |
 | `source:dep-audit` | Created by dependency audit agent |
 | `source:security-scan` | Created by security scan agent |
 | `source:code-quality` | Created by code quality agent |
