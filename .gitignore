@@ -7,3 +7,4 @@ build/
 .mmdc/
 .pytest_cache/
 .hypothesis/
+site/
