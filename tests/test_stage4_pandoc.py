@@ -101,7 +101,14 @@ class TestConvertToDocx:
         style = _make_style_config()
         out = tmp_path / "output.docx"
         convert_to_docx(
-            SAMPLE_TEXT, "Memory: Knowledge folder consolidation", config, style, FILTERS_DIR, None, out, resource_path=None
+            SAMPLE_TEXT,
+            "Memory: Knowledge folder consolidation",
+            config,
+            style,
+            FILTERS_DIR,
+            None,
+            out,
+            resource_path=None,
         )
         assert out.exists()
         assert out.stat().st_size > 0
@@ -120,9 +127,7 @@ class TestConvertToDocx:
         style = _make_style_config()
         out = tmp_path / "output.docx"
         with pytest.raises(FileNotFoundError, match="Lua filter not found"):
-            convert_to_docx(
-                SAMPLE_TEXT, "Test", config, style, tmp_path / "nonexistent", None, out, resource_path=None
-            )
+            convert_to_docx(SAMPLE_TEXT, "Test", config, style, tmp_path / "nonexistent", None, out, resource_path=None)
 
     def test_callout_box_rendered(self, tmp_path: Path) -> None:
         """Callout divs are processed via callout_boxes_docx.lua."""
