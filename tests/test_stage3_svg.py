@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from obsidian_export.exceptions import SVGConversionError
+from obsidian_export.exceptions import PathTraversalError, SVGConversionError
 from obsidian_export.pipeline.stage3_svg import convert_svg_images, convert_svg_images_to_png
 
 MINIMAL_SVG = (
@@ -82,6 +82,68 @@ def test_multiple_svgs_converted():
         assert "svg_2.pdf" in result
         assert (tmpdir / "svg_1.pdf").exists()
         assert (tmpdir / "svg_2.pdf").exists()
+
+
+class TestPathTraversal:
+    def test_relative_path_escaping_vault_raises(self):
+        with tempfile.TemporaryDirectory() as workdir:
+            workdir = Path(workdir)
+            vault = workdir / "vault"
+            vault.mkdir()
+            outside = workdir / "outside.svg"
+            outside.write_text(MINIMAL_SVG)
+
+            tmpdir = workdir / "out"
+            tmpdir.mkdir()
+
+            text = "![escape](../outside.svg)\n"
+            with pytest.raises(PathTraversalError, match="SVG path escapes document root"):
+                convert_svg_images(text, tmpdir, resource_path=vault)
+
+    def test_absolute_path_outside_vault_raises(self):
+        with tempfile.TemporaryDirectory() as workdir:
+            workdir = Path(workdir)
+            vault = workdir / "vault"
+            vault.mkdir()
+            outside = workdir / "outside.svg"
+            outside.write_text(MINIMAL_SVG)
+
+            tmpdir = workdir / "out"
+            tmpdir.mkdir()
+
+            text = f"![escape]({outside})\n"
+            with pytest.raises(PathTraversalError, match="SVG path escapes document root"):
+                convert_svg_images(text, tmpdir, resource_path=vault)
+
+    def test_path_within_vault_allowed(self):
+        with tempfile.TemporaryDirectory() as workdir:
+            workdir = Path(workdir)
+            vault = workdir / "vault"
+            vault.mkdir()
+            svg_file = vault / "figure.svg"
+            svg_file.write_text(MINIMAL_SVG)
+
+            tmpdir = workdir / "out"
+            tmpdir.mkdir()
+
+            text = "![ok](figure.svg)\n"
+            result = convert_svg_images(text, tmpdir, resource_path=vault)
+            assert "svg_1.pdf" in result
+
+    def test_png_path_traversal_raises(self):
+        with tempfile.TemporaryDirectory() as workdir:
+            workdir = Path(workdir)
+            vault = workdir / "vault"
+            vault.mkdir()
+            outside = workdir / "outside.svg"
+            outside.write_text(MINIMAL_SVG)
+
+            tmpdir = workdir / "out"
+            tmpdir.mkdir()
+
+            text = "![escape](../outside.svg)\n"
+            with pytest.raises(PathTraversalError, match="SVG path escapes document root"):
+                convert_svg_images_to_png(text, tmpdir, resource_path=vault)
 
 
 class TestConvertSvgImagesToPng:
