@@ -1,6 +1,7 @@
 """Stage 1: Vault operations — frontmatter, embed resolution, Obsidian syntax stripping."""
 
 import re
+from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
@@ -15,6 +16,17 @@ _SECTION_EMBED_RE = re.compile(r"^([^#]+)#(.+)$")
 _WIKILINK_PIPE_RE = re.compile(r"\[\[([^\]|]+)\|([^\]]+)\]\]")
 _WIKILINK_BARE_RE = re.compile(r"\[\[([^\]]+)\]\]")
 _RELATIONS_RE = re.compile(r"\n## Relations\b.*", re.DOTALL | re.IGNORECASE)
+
+
+@dataclass(frozen=True)
+class EmbedContext:
+    """Immutable context for recursive embed resolution."""
+
+    vault_root: Path
+    current_file: Path
+    visited: frozenset[Path]
+    depth: int
+    max_embed_depth: int
 
 
 def _quote_yaml_values(raw: str) -> str:
@@ -109,38 +121,41 @@ def resolve_embeds(
     - Missing embeds: raise EmbedNotFoundError
     - Circular embeds: raise CircularEmbedError
     """
-    return _resolve_embeds_recursive(content, vault_root, current_file, frozenset(), 0, max_embed_depth)
+    ctx = EmbedContext(
+        vault_root=vault_root,
+        current_file=current_file,
+        visited=frozenset(),
+        depth=0,
+        max_embed_depth=max_embed_depth,
+    )
+    return _resolve_embeds_recursive(content, ctx)
 
 
 def _resolve_embeds_recursive(
     content: str,
-    vault_root: Path,
-    current_file: Path,
-    visited: frozenset[Path],
-    depth: int,
-    max_embed_depth: int,
+    ctx: EmbedContext,
 ) -> str:
     """Internal recursive embed resolution with cycle detection."""
-    if depth > max_embed_depth:
+    if ctx.depth > ctx.max_embed_depth:
         return content
 
-    vault_resolved = vault_root.resolve()
+    vault_resolved = ctx.vault_root.resolve()
 
     def replace_embed(m: re.Match) -> str:
         raw = m.group(1).strip()
 
         # Image embed check
         if re.search(r"\.(png|jpg|jpeg|gif|svg|webp)$", raw, re.IGNORECASE):
-            img_path = (vault_root / raw).resolve()
+            img_path = (ctx.vault_root / raw).resolve()
             if not img_path.is_relative_to(vault_resolved):
                 raise PathTraversalError(f"Embed path escapes vault root: {raw!r} resolved to {img_path}")
             if img_path.exists():
                 return f"![]({img_path})"
             # Obsidian resolves by filename anywhere in vault — search subdirs
-            matches = list(vault_root.rglob(raw))
+            matches = list(ctx.vault_root.rglob(raw))
             if matches:
                 return f"![]({matches[0]})"
-            return f"![{raw}]({vault_root / raw})"
+            return f"![{raw}]({ctx.vault_root / raw})"
 
         # Section embed: ![[note#Heading]]
         section_match = _SECTION_EMBED_RE.match(raw)
@@ -152,17 +167,17 @@ def _resolve_embeds_recursive(
             heading = None
 
         # Resolve note path
-        note_path = vault_root / f"{note_slug}.md"
+        note_path = ctx.vault_root / f"{note_slug}.md"
         if not note_path.exists():
             # Try relative to current file's directory
-            note_path = current_file.parent / f"{note_slug}.md"
+            note_path = ctx.current_file.parent / f"{note_slug}.md"
         if not note_path.exists():
-            raise EmbedNotFoundError(f"Embed not found: {raw!r}. Searched: {vault_root}, {current_file.parent}")
+            raise EmbedNotFoundError(f"Embed not found: {raw!r}. Searched: {ctx.vault_root}, {ctx.current_file.parent}")
 
         note_path = note_path.resolve()
         if not note_path.is_relative_to(vault_resolved):
             raise PathTraversalError(f"Embed path escapes vault root: {raw!r} resolved to {note_path}")
-        if note_path in visited:
+        if note_path in ctx.visited:
             raise CircularEmbedError(f"Circular embed chain detected: {raw!r}")
 
         note_text = note_path.read_text(encoding="utf-8")
@@ -172,14 +187,14 @@ def _resolve_embeds_recursive(
             note_body = _extract_section(note_body, heading)
 
         # Recurse
-        resolved = _resolve_embeds_recursive(
-            note_body,
-            vault_root,
-            note_path,
-            visited | {note_path},
-            depth + 1,
-            max_embed_depth,
+        child_ctx = EmbedContext(
+            vault_root=ctx.vault_root,
+            current_file=note_path,
+            visited=ctx.visited | {note_path},
+            depth=ctx.depth + 1,
+            max_embed_depth=ctx.max_embed_depth,
         )
+        resolved = _resolve_embeds_recursive(note_body, child_ctx)
         return resolved.strip()
 
     return _EMBED_RE.sub(replace_embed, content)
