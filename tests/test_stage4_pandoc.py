@@ -10,6 +10,7 @@ import yaml
 from obsidian_export.config import PandocConfig, StyleConfig, default_config
 from obsidian_export.pipeline.latex_header import render_header
 from obsidian_export.pipeline.stage4_pandoc import (
+    PandocInvocation,
     _yaml_metadata_block,
     convert_to_docx,
     convert_to_pdf,
@@ -41,6 +42,18 @@ def _make_style_config(**overrides) -> StyleConfig:
 def _render_default_header() -> str:
     style = _make_style_config()
     return render_header(style, DEFAULT_STYLE_DIR / "header.tex", "Test Document")
+
+
+def _make_invocation(tmp_path: Path, text: str, title: str, output_name: str, filters_dir: Path) -> PandocInvocation:
+    return PandocInvocation(
+        text=text,
+        title=title,
+        pandoc_config=_make_pandoc_config(),
+        style_config=_make_style_config(),
+        filters_dir=filters_dir,
+        output_path=tmp_path / output_name,
+        resource_path=None,
+    )
 
 
 SAMPLE_TEXT = "# Test Document\n\nThis is a test.\n\n| A | B |\n|---|---|\n| 1 | 2 |\n"
@@ -76,166 +89,92 @@ class TestYamlMetadataBlock:
 
 class TestConvertToDocx:
     def test_produces_file(self, tmp_path: Path) -> None:
-        config = _make_pandoc_config()
-        style = _make_style_config()
-        out = tmp_path / "output.docx"
-        convert_to_docx(SAMPLE_TEXT, "Test Document", config, style, FILTERS_DIR, None, out, resource_path=None)
-        assert out.exists()
-        assert out.stat().st_size > 0
+        inv = _make_invocation(tmp_path, SAMPLE_TEXT, "Test Document", "output.docx", FILTERS_DIR)
+        convert_to_docx(inv, reference_doc=None)
+        assert inv.output_path.exists()
+        assert inv.output_path.stat().st_size > 0
 
     def test_creates_parent_dirs(self, tmp_path: Path) -> None:
-        config = _make_pandoc_config()
-        style = _make_style_config()
-        out = tmp_path / "nested" / "dir" / "output.docx"
-        convert_to_docx(SAMPLE_TEXT, "Test", config, style, FILTERS_DIR, None, out, resource_path=None)
-        assert out.exists()
+        inv = _make_invocation(tmp_path / "nested" / "dir", SAMPLE_TEXT, "Test", "output.docx", FILTERS_DIR)
+        convert_to_docx(inv, reference_doc=None)
+        assert inv.output_path.exists()
 
     def test_title_with_colon(self, tmp_path: Path) -> None:
         """Titles containing colons must not break conversion."""
-        config = _make_pandoc_config()
-        style = _make_style_config()
-        out = tmp_path / "output.docx"
-        convert_to_docx(
-            SAMPLE_TEXT,
-            "Memory: Knowledge folder consolidation",
-            config,
-            style,
-            FILTERS_DIR,
-            None,
-            out,
-            resource_path=None,
+        inv = _make_invocation(
+            tmp_path, SAMPLE_TEXT, "Memory: Knowledge folder consolidation", "output.docx", FILTERS_DIR
         )
-        assert out.exists()
-        assert out.stat().st_size > 0
+        convert_to_docx(inv, reference_doc=None)
+        assert inv.output_path.exists()
+        assert inv.output_path.stat().st_size > 0
 
     def test_output_is_docx_format(self, tmp_path: Path) -> None:
-        config = _make_pandoc_config()
-        style = _make_style_config()
-        out = tmp_path / "output.docx"
-        convert_to_docx(SAMPLE_TEXT, "Test", config, style, FILTERS_DIR, None, out, resource_path=None)
+        inv = _make_invocation(tmp_path, SAMPLE_TEXT, "Test", "output.docx", FILTERS_DIR)
+        convert_to_docx(inv, reference_doc=None)
         # DOCX files start with PK (zip format)
-        header = out.read_bytes()[:2]
+        header = inv.output_path.read_bytes()[:2]
         assert header == b"PK"
 
     def test_missing_filter_raises(self, tmp_path: Path) -> None:
-        config = _make_pandoc_config()
-        style = _make_style_config()
-        out = tmp_path / "output.docx"
+        inv = _make_invocation(tmp_path, SAMPLE_TEXT, "Test", "output.docx", tmp_path / "nonexistent")
         with pytest.raises(FileNotFoundError, match="Lua filter not found"):
-            convert_to_docx(SAMPLE_TEXT, "Test", config, style, tmp_path / "nonexistent", None, out, resource_path=None)
+            convert_to_docx(inv, reference_doc=None)
 
     def test_callout_box_rendered(self, tmp_path: Path) -> None:
         """Callout divs are processed via callout_boxes_docx.lua."""
-        config = _make_pandoc_config()
-        style = _make_style_config()
-        out = tmp_path / "output.docx"
         text = SAMPLE_TEXT + "\n::: note\nThis is a note.\n:::\n"
-        convert_to_docx(text, "Test", config, style, FILTERS_DIR, None, out, resource_path=None)
-        assert out.exists()
-        assert out.stat().st_size > 0
+        inv = _make_invocation(tmp_path, text, "Test", "output.docx", FILTERS_DIR)
+        convert_to_docx(inv, reference_doc=None)
+        assert inv.output_path.exists()
+        assert inv.output_path.stat().st_size > 0
 
     def test_long_url_promoted_to_footnote(self, tmp_path: Path) -> None:
         """Long URLs are promoted to footnotes via promote_footnotes.lua."""
-        config = _make_pandoc_config()
-        style = _make_style_config()
-        out = tmp_path / "output.docx"
         long_url = "https://example.com/" + "a" * 80
         text = f"[click here]({long_url})\n"
-        convert_to_docx(text, "Test", config, style, FILTERS_DIR, None, out, resource_path=None)
-        assert out.exists()
-        assert out.stat().st_size > 0
+        inv = _make_invocation(tmp_path, text, "Test", "output.docx", FILTERS_DIR)
+        convert_to_docx(inv, reference_doc=None)
+        assert inv.output_path.exists()
+        assert inv.output_path.stat().st_size > 0
 
 
 @pytest.mark.skipif(not TECTONIC_AVAILABLE, reason="tectonic not installed -- skipping PDF tests")
 class TestConvertToPdf:
     def test_produces_file(self, tmp_path: Path) -> None:
-        pandoc_config = _make_pandoc_config()
-        style_config = _make_style_config()
+        inv = _make_invocation(tmp_path, SAMPLE_TEXT, "Test Document", "output.pdf", FILTERS_DIR)
         rendered_header = _render_default_header()
-        out = tmp_path / "output.pdf"
-        convert_to_pdf(
-            SAMPLE_TEXT,
-            "Test Document",
-            pandoc_config,
-            style_config,
-            rendered_header,
-            FILTERS_DIR,
-            out,
-            resource_path=None,
-        )
-        assert out.exists()
-        assert out.stat().st_size > 1000
+        convert_to_pdf(inv, rendered_header)
+        assert inv.output_path.exists()
+        assert inv.output_path.stat().st_size > 1000
 
     def test_output_is_pdf_format(self, tmp_path: Path) -> None:
-        pandoc_config = _make_pandoc_config()
-        style_config = _make_style_config()
+        inv = _make_invocation(tmp_path, SAMPLE_TEXT, "Test Document", "output.pdf", FILTERS_DIR)
         rendered_header = _render_default_header()
-        out = tmp_path / "output.pdf"
-        convert_to_pdf(
-            SAMPLE_TEXT,
-            "Test Document",
-            pandoc_config,
-            style_config,
-            rendered_header,
-            FILTERS_DIR,
-            out,
-            resource_path=None,
-        )
-        header = out.read_bytes()[:5]
+        convert_to_pdf(inv, rendered_header)
+        header = inv.output_path.read_bytes()[:5]
         assert header == b"%PDF-"
 
     def test_missing_filter_raises(self, tmp_path: Path) -> None:
-        pandoc_config = _make_pandoc_config()
-        style_config = _make_style_config()
+        inv = _make_invocation(tmp_path, SAMPLE_TEXT, "Test", "output.pdf", tmp_path / "nonexistent")
         rendered_header = _render_default_header()
-        out = tmp_path / "output.pdf"
         with pytest.raises(FileNotFoundError, match="Lua filter not found"):
-            convert_to_pdf(
-                SAMPLE_TEXT,
-                "Test",
-                pandoc_config,
-                style_config,
-                rendered_header,
-                tmp_path / "nonexistent",
-                out,
-                resource_path=None,
-            )
+            convert_to_pdf(inv, rendered_header)
 
     def test_title_with_colon(self, tmp_path: Path) -> None:
         """Titles containing colons must not break PDF conversion."""
-        pandoc_config = _make_pandoc_config()
-        style_config = _make_style_config()
-        rendered_header = _render_default_header()
-        out = tmp_path / "output.pdf"
-        convert_to_pdf(
-            SAMPLE_TEXT,
-            "Memory: Azure Subscription Setup — Obungi CSP",
-            pandoc_config,
-            style_config,
-            rendered_header,
-            FILTERS_DIR,
-            out,
-            resource_path=None,
+        inv = _make_invocation(
+            tmp_path, SAMPLE_TEXT, "Memory: Azure Subscription Setup — Obungi CSP", "output.pdf", FILTERS_DIR
         )
-        assert out.exists()
-        assert out.read_bytes()[:5] == b"%PDF-"
+        rendered_header = _render_default_header()
+        convert_to_pdf(inv, rendered_header)
+        assert inv.output_path.exists()
+        assert inv.output_path.read_bytes()[:5] == b"%PDF-"
 
     def test_dollar_sign_safe(self, tmp_path: Path) -> None:
         """Ensure $25/user/month doesn't break PDF compilation."""
-        pandoc_config = _make_pandoc_config()
-        style_config = _make_style_config()
-        rendered_header = _render_default_header()
-        out = tmp_path / "output.pdf"
         text = "Price: \\$25/user/month and \\$100/year.\n"
+        inv = _make_invocation(tmp_path, text, "Price Test", "output.pdf", FILTERS_DIR)
+        rendered_header = _render_default_header()
         # Should not raise
-        convert_to_pdf(
-            text,
-            "Price Test",
-            pandoc_config,
-            style_config,
-            rendered_header,
-            FILTERS_DIR,
-            out,
-            resource_path=None,
-        )
-        assert out.exists()
+        convert_to_pdf(inv, rendered_header)
+        assert inv.output_path.exists()

@@ -19,7 +19,7 @@ from obsidian_export.pipeline.stage1_vault import (
 from obsidian_export.pipeline.stage2_preprocess import preprocess
 from obsidian_export.pipeline.stage3_mermaid import render_mermaid_blocks
 from obsidian_export.pipeline.stage3_svg import convert_svg_images, convert_svg_images_to_png
-from obsidian_export.pipeline.stage4_pandoc import convert_to_docx, convert_to_pdf
+from obsidian_export.pipeline.stage4_pandoc import PandocInvocation, convert_to_docx, convert_to_pdf
 from obsidian_export.profiles import USER_STYLES_DIR
 
 
@@ -105,28 +105,20 @@ def run(
         style_dir = _resolve_style_dir(config.style)
         filters_dir = Path(__file__).parent / "assets" / "filters"
 
+        invocation = PandocInvocation(
+            text=body,
+            title=title,
+            pandoc_config=config.pandoc,
+            style_config=config.style,
+            filters_dir=filters_dir,
+            output_path=output_path,
+            resource_path=input_path.parent,
+        )
+
         if output_format == "pdf":
             rendered_header = render_header(config.style, style_dir / "header.tex", title)
-            convert_to_pdf(
-                body,
-                title,
-                config.pandoc,
-                config.style,
-                rendered_header,
-                filters_dir,
-                output_path,
-                resource_path=input_path.parent,
-            )
+            convert_to_pdf(invocation, rendered_header)
         else:
             reference_doc_path = style_dir / "reference.docx"
             reference_doc = reference_doc_path if reference_doc_path.exists() else None
-            convert_to_docx(
-                body,
-                title,
-                config.pandoc,
-                config.style,
-                filters_dir,
-                reference_doc,
-                output_path,
-                resource_path=input_path.parent,
-            )
+            convert_to_docx(invocation, reference_doc)

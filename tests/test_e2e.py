@@ -170,17 +170,17 @@ class TestPdfE2E:
         text = "# Branded Test\n\nThis tests brand styling.\n\n## Section Two\n\nMore content.\n"
         body = preprocess(text, config.obsidian)
         out = tmp_path / "branded.pdf"
-        from obsidian_export.pipeline.stage4_pandoc import convert_to_pdf
+        from obsidian_export.pipeline.stage4_pandoc import PandocInvocation, convert_to_pdf
 
-        convert_to_pdf(
-            body,
-            "Branded Test",
-            config.pandoc,
-            style,
-            rendered_header,
-            FILTERS_DIR,
-            out,
+        invocation = PandocInvocation(
+            text=body,
+            title="Branded Test",
+            pandoc_config=config.pandoc,
+            style_config=style,
+            filters_dir=FILTERS_DIR,
+            output_path=out,
             resource_path=None,
         )
+        convert_to_pdf(invocation, rendered_header)
         assert out.exists()
         assert out.read_bytes()[:5] == b"%PDF-"
