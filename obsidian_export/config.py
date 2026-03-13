@@ -36,6 +36,26 @@ class CalloutColors:
 
 
 @dataclass(frozen=True)
+class HeadingStyle:
+    level: str
+    size: str
+    bold: bool
+    sans: bool
+    color: str
+    uppercase: bool
+
+
+@dataclass(frozen=True)
+class TitleStyle:
+    size: str
+    bold: bool
+    sans: bool
+    color: str
+    date_visible: bool
+    vskip_after: str
+
+
+@dataclass(frozen=True)
 class StyleConfig:
     name: str
     geometry: str
@@ -59,8 +79,8 @@ class StyleConfig:
     logo: str
     style_dir: str
     brand_colors: tuple[tuple[str, int, int, int], ...]
-    heading_styles: tuple[tuple[str, str, bool, bool, str, bool], ...]
-    title_style: tuple[str, bool, bool, str, bool, str] | None
+    heading_styles: tuple[HeadingStyle, ...]
+    title_style: TitleStyle | None
 
 
 @dataclass(frozen=True)
@@ -122,30 +142,30 @@ def _build_config(raw: dict, config_dir: Path | None) -> ConvertConfig:
     brand_colors_raw = style_raw.get("brand_colors", {}) or {}
     brand_colors = tuple((name, int(rgb[0]), int(rgb[1]), int(rgb[2])) for name, rgb in brand_colors_raw.items())
 
-    # Parse heading_styles: list of dicts -> tuple of flat tuples
+    # Parse heading_styles: list of dicts -> tuple of HeadingStyle
     heading_styles_raw = style_raw.get("heading_styles", []) or []
     heading_styles = tuple(
-        (
-            h["level"],
-            h["size"],
-            bool(h.get("bold", False)),
-            bool(h.get("sans", False)),
-            h.get("color", ""),
-            bool(h.get("uppercase", False)),
+        HeadingStyle(
+            level=h["level"],
+            size=h["size"],
+            bold=bool(h.get("bold", False)),
+            sans=bool(h.get("sans", False)),
+            color=h.get("color", ""),
+            uppercase=bool(h.get("uppercase", False)),
         )
         for h in heading_styles_raw
     )
 
-    # Parse title_style: dict or None -> flat tuple or None
+    # Parse title_style: dict or None -> TitleStyle or None
     title_style_raw = style_raw.get("title_style")
     if title_style_raw:
-        title_style = (
-            title_style_raw["size"],
-            bool(title_style_raw.get("bold", False)),
-            bool(title_style_raw.get("sans", False)),
-            title_style_raw.get("color", ""),
-            bool(title_style_raw.get("date_visible", True)),
-            title_style_raw.get("vskip_after", ""),
+        title_style: TitleStyle | None = TitleStyle(
+            size=title_style_raw["size"],
+            bold=bool(title_style_raw.get("bold", False)),
+            sans=bool(title_style_raw.get("sans", False)),
+            color=title_style_raw.get("color", ""),
+            date_visible=bool(title_style_raw.get("date_visible", True)),
+            vskip_after=title_style_raw.get("vskip_after", ""),
         )
     else:
         title_style = None

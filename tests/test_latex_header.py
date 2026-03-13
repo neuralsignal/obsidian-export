@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from obsidian_export.config import CalloutColors, StyleConfig, default_config
+from obsidian_export.config import CalloutColors, HeadingStyle, StyleConfig, TitleStyle, default_config
 from obsidian_export.pipeline.latex_header import (
     _build_brand_colors_block,
     _build_font_block,
@@ -178,7 +178,7 @@ class TestBuildHeadingStylesBlock:
         assert _build_heading_styles_block(()) == ""
 
     def test_single_level(self) -> None:
-        styles = (("section", "Large", True, True, "petrol", False),)
+        styles = (HeadingStyle(level="section", size="Large", bold=True, sans=True, color="petrol", uppercase=False),)
         result = _build_heading_styles_block(styles)
         assert "\\usepackage{titlesec}" in result
         assert "\\titleformat{\\section}" in result
@@ -188,21 +188,23 @@ class TestBuildHeadingStylesBlock:
         assert "\\color{petrol}" in result
 
     def test_uppercase_flag(self) -> None:
-        styles = (("subsection", "large", True, True, "turkis", True),)
+        styles = (HeadingStyle(level="subsection", size="large", bold=True, sans=True, color="turkis", uppercase=True),)
         result = _build_heading_styles_block(styles)
         assert "\\MakeUppercase" in result
 
     def test_no_uppercase(self) -> None:
-        styles = (("section", "Large", True, False, "", False),)
+        styles = (HeadingStyle(level="section", size="Large", bold=True, sans=False, color="", uppercase=False),)
         result = _build_heading_styles_block(styles)
         assert "\\MakeUppercase" not in result
         assert "\\sffamily" not in result
 
     def test_all_three_levels(self) -> None:
         styles = (
-            ("section", "Large", True, True, "petrol", False),
-            ("subsection", "large", True, True, "turkis", True),
-            ("subsubsection", "normalsize", True, True, "petrol", False),
+            HeadingStyle(level="section", size="Large", bold=True, sans=True, color="petrol", uppercase=False),
+            HeadingStyle(level="subsection", size="large", bold=True, sans=True, color="turkis", uppercase=True),
+            HeadingStyle(
+                level="subsubsection", size="normalsize", bold=True, sans=True, color="petrol", uppercase=False
+            ),
         )
         result = _build_heading_styles_block(styles)
         assert "\\titleformat{\\section}" in result
@@ -210,17 +212,29 @@ class TestBuildHeadingStylesBlock:
         assert "\\titleformat{\\subsubsection}" in result
 
     def test_injection_in_level_escaped(self) -> None:
-        styles = (("section}\\write18{cmd", "Large", False, False, "", False),)
+        styles = (
+            HeadingStyle(
+                level="section}\\write18{cmd", size="Large", bold=False, sans=False, color="", uppercase=False
+            ),
+        )
         result = _build_heading_styles_block(styles)
         assert "\\write18" not in result
 
     def test_injection_in_size_escaped(self) -> None:
-        styles = (("section", "Large}\\write18{cmd", False, False, "", False),)
+        styles = (
+            HeadingStyle(
+                level="section", size="Large}\\write18{cmd", bold=False, sans=False, color="", uppercase=False
+            ),
+        )
         result = _build_heading_styles_block(styles)
         assert "\\write18" not in result
 
     def test_injection_in_color_escaped(self) -> None:
-        styles = (("section", "Large", False, False, "petrol}\\write18{cmd", False),)
+        styles = (
+            HeadingStyle(
+                level="section", size="Large", bold=False, sans=False, color="petrol}\\write18{cmd", uppercase=False
+            ),
+        )
         result = _build_heading_styles_block(styles)
         assert "\\write18" not in result
 
@@ -230,7 +244,7 @@ class TestBuildTitleStyleBlock:
         assert _build_title_style_block(None) == ""
 
     def test_with_style(self) -> None:
-        ts = ("huge", True, True, "petrol", True, "2em")
+        ts = TitleStyle(size="huge", bold=True, sans=True, color="petrol", date_visible=True, vskip_after="2em")
         result = _build_title_style_block(ts)
         assert "\\makeatletter" in result
         assert "\\makeatother" in result
@@ -244,24 +258,26 @@ class TestBuildTitleStyleBlock:
         assert "\\vskip 2em" in result
 
     def test_date_hidden(self) -> None:
-        ts = ("LARGE", False, False, "", False, "")
+        ts = TitleStyle(size="LARGE", bold=False, sans=False, color="", date_visible=False, vskip_after="")
         result = _build_title_style_block(ts)
         assert "\\@date" not in result
         assert "\\bfseries" not in result
         assert "\\sffamily" not in result
 
     def test_color_applied(self) -> None:
-        ts = ("huge", True, True, "turkis", True, "1em")
+        ts = TitleStyle(size="huge", bold=True, sans=True, color="turkis", date_visible=True, vskip_after="1em")
         result = _build_title_style_block(ts)
         assert "\\color{turkis}" in result
 
     def test_injection_in_size_escaped(self) -> None:
-        ts = ("huge}\\write18{cmd", False, False, "", False, "")
+        ts = TitleStyle(size="huge}\\write18{cmd", bold=False, sans=False, color="", date_visible=False, vskip_after="")
         result = _build_title_style_block(ts)
         assert "\\write18" not in result
 
     def test_injection_in_color_escaped(self) -> None:
-        ts = ("huge", False, False, "petrol}\\write18{cmd", False, "")
+        ts = TitleStyle(
+            size="huge", bold=False, sans=False, color="petrol}\\write18{cmd", date_visible=False, vskip_after=""
+        )
         result = _build_title_style_block(ts)
         assert "\\write18" not in result
 
