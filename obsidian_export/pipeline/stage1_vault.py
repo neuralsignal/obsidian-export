@@ -79,15 +79,6 @@ def clean_frontmatter(fm: dict) -> dict:
     return cleaned
 
 
-def _read_note(path: Path) -> str | None:
-    """Read a vault note file. Returns None if not found."""
-    for ext in ("", ".md"):
-        candidate = path.with_suffix(ext) if ext else path
-        if candidate.exists():
-            return candidate.read_text(encoding="utf-8")
-    return None
-
-
 def _extract_section(text: str, heading: str) -> str:
     """Extract content under a specific heading from markdown text."""
     pattern = re.compile(
