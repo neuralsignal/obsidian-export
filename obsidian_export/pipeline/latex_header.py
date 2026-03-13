@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from obsidian_export.config import StyleConfig
+from obsidian_export.config import HeadingStyle, StyleConfig, TitleStyle
 
 
 def render_header(style: StyleConfig, template_path: Path, title: str) -> str:
@@ -133,41 +133,40 @@ def _build_brand_colors_block(brand_colors: tuple[tuple[str, int, int, int], ...
     return "\n".join(lines)
 
 
-def _build_heading_styles_block(heading_styles: tuple[tuple[str, str, bool, bool, str, bool], ...]) -> str:
+def _build_heading_styles_block(heading_styles: tuple[HeadingStyle, ...]) -> str:
     """Generate titlesec heading format commands."""
     if not heading_styles:
         return ""
     lines = ["\\usepackage{titlesec}"]
-    for level, size, bold, sans, color, uppercase in heading_styles:
+    for h in heading_styles:
         parts = ["\\normalfont"]
-        parts.append(f"\\{_escape_latex(size)}")
-        if bold:
+        parts.append(f"\\{_escape_latex(h.size)}")
+        if h.bold:
             parts.append("\\bfseries")
-        if sans:
+        if h.sans:
             parts.append("\\sffamily")
-        if color:
-            parts.append(f"\\color{{{_escape_latex(color)}}}")
+        if h.color:
+            parts.append(f"\\color{{{_escape_latex(h.color)}}}")
         fmt = "".join(parts)
         # For the content argument (last {}), use \\MakeUppercase if uppercase
-        content_arg = "{\\MakeUppercase}" if uppercase else "{}"
-        escaped_level = _escape_latex(level)
+        content_arg = "{\\MakeUppercase}" if h.uppercase else "{}"
+        escaped_level = _escape_latex(h.level)
         lines.append(f"\\titleformat{{\\{escaped_level}}}\n  {{{fmt}}}\n  {{\\the{escaped_level}}}{{1em}}{content_arg}")
     return "\n\n".join(lines)
 
 
-def _build_title_style_block(title_style: tuple[str, bool, bool, str, bool, str] | None) -> str:
+def _build_title_style_block(title_style: TitleStyle | None) -> str:
     """Generate custom \\maketitle definition."""
     if title_style is None:
         return ""
-    size, bold, sans, color, date_visible, vskip_after = title_style
     title_parts = []
-    title_parts.append(f"\\{_escape_latex(size)}")
-    if bold:
+    title_parts.append(f"\\{_escape_latex(title_style.size)}")
+    if title_style.bold:
         title_parts.append("\\bfseries")
-    if sans:
+    if title_style.sans:
         title_parts.append("\\sffamily")
-    if color:
-        title_parts.append(f"\\color{{{_escape_latex(color)}}}")
+    if title_style.color:
+        title_parts.append(f"\\color{{{_escape_latex(title_style.color)}}}")
     title_fmt = "".join(title_parts)
 
     lines = [
@@ -176,12 +175,12 @@ def _build_title_style_block(title_style: tuple[str, bool, bool, str, bool, str]
         "  \\begin{center}%",
         f"    {{{title_fmt}\\@title\\par}}%",
     ]
-    if date_visible:
+    if title_style.date_visible:
         lines.append("    \\vskip 1em%")
         lines.append("    {\\large\\@date\\par}%")
     lines.append("  \\end{center}%")
-    if vskip_after:
-        lines.append(f"  \\vskip {vskip_after}%")
+    if title_style.vskip_after:
+        lines.append(f"  \\vskip {title_style.vskip_after}%")
     lines.append("}")
     lines.append("\\makeatother")
     return "\n".join(lines)

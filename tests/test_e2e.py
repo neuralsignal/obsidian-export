@@ -9,7 +9,9 @@ import pytest
 from obsidian_export import run
 from obsidian_export.config import (
     ConvertConfig,
+    HeadingStyle,
     StyleConfig,
+    TitleStyle,
     default_config,
 )
 from obsidian_export.exceptions import EmbedNotFoundError
@@ -73,10 +75,10 @@ def _make_branded_style() -> StyleConfig:
             ("turkis", 0, 152, 160),
         ),
         heading_styles=(
-            ("section", "Large", True, True, "petrol", False),
-            ("subsection", "large", True, True, "turkis", True),
+            HeadingStyle(level="section", size="Large", bold=True, sans=True, color="petrol", uppercase=False),
+            HeadingStyle(level="subsection", size="large", bold=True, sans=True, color="turkis", uppercase=True),
         ),
-        title_style=("huge", True, True, "petrol", True, "2em"),
+        title_style=TitleStyle(size="huge", bold=True, sans=True, color="petrol", date_visible=True, vskip_after="2em"),
     )
 
 

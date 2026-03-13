@@ -8,10 +8,12 @@ import yaml
 from obsidian_export.config import (
     CalloutColors,
     ConvertConfig,
+    HeadingStyle,
     MermaidConfig,
     ObsidianConfig,
     PandocConfig,
     StyleConfig,
+    TitleStyle,
     _deep_merge,
     default_config,
     load_config,
@@ -329,8 +331,12 @@ def test_heading_styles_parsed(tmp_path: Path) -> None:
     cfg = _write_config(tmp_path, data)
     result = load_config(cfg)
     assert len(result.style.heading_styles) == 2
-    assert result.style.heading_styles[0] == ("section", "Large", True, True, "petrol", False)
-    assert result.style.heading_styles[1] == ("subsection", "large", True, True, "turkis", True)
+    assert result.style.heading_styles[0] == HeadingStyle(
+        level="section", size="Large", bold=True, sans=True, color="petrol", uppercase=False
+    )
+    assert result.style.heading_styles[1] == HeadingStyle(
+        level="subsection", size="large", bold=True, sans=True, color="turkis", uppercase=True
+    )
 
 
 # ── title_style ────────────────────────────────────────────────────────────
@@ -356,7 +362,9 @@ def test_title_style_parsed(tmp_path: Path) -> None:
     }
     cfg = _write_config(tmp_path, data)
     result = load_config(cfg)
-    assert result.style.title_style == ("huge", True, True, "petrol", True, "2em")
+    assert result.style.title_style == TitleStyle(
+        size="huge", bold=True, sans=True, color="petrol", date_visible=True, vskip_after="2em"
+    )
 
 
 def test_title_style_date_hidden(tmp_path: Path) -> None:
@@ -374,7 +382,9 @@ def test_title_style_date_hidden(tmp_path: Path) -> None:
     }
     cfg = _write_config(tmp_path, data)
     result = load_config(cfg)
-    assert result.style.title_style == ("LARGE", False, False, "", False, "")
+    assert result.style.title_style == TitleStyle(
+        size="LARGE", bold=False, sans=False, color="", date_visible=False, vskip_after=""
+    )
 
 
 def test_logo_resolved_to_absolute(tmp_path: Path) -> None:
