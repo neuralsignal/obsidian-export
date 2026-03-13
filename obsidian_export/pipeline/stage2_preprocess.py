@@ -4,12 +4,6 @@ import re
 
 from obsidian_export.config import ObsidianConfig
 
-# Matches fenced code blocks (``` or ~~~) to skip during transforms
-_FENCED_CODE_RE = re.compile(r"(```+[^\n]*\n.*?```+|~~~+[^\n]*\n.*?~~~+)", re.DOTALL)
-# Display math $$...$$
-_DISPLAY_MATH_RE = re.compile(r"\$\$.*?\$\$", re.DOTALL)
-# Inline math $...$  (no digits/space after opening $, no $ in content)
-_INLINE_MATH_RE = re.compile(r"\$([^$\s][^$]*?)\$")
 # Currency: $ followed by a digit or space then digit (e.g. $25 or $ 25)
 _CURRENCY_RE = re.compile(r"\$(?=[\d\s])")
 # Obsidian callout: > [!TYPE] Optional title
@@ -107,8 +101,6 @@ def process_urls(text: str, strategy: str, threshold: int) -> str:
 
     def replace_url(m: re.Match) -> str:
         url = m.group(1)
-        if strategy == "strip":
-            return url  # return just URL text without full URL — actually strip means remove
         if strategy == "footnote_all" or (strategy == "footnote_long" and len(url) > threshold):
             # Pandoc footnote syntax: [^N] — but inline footnotes are cleaner
             return f"[link]({url})[^url-{abs(hash(url)) % 100000}]\n\n[^url-{abs(hash(url)) % 100000}]: <{url}>"
