@@ -17,8 +17,8 @@ Configuration is merged on top of built-in defaults. You only need to specify th
 ### CLI
 
 ```bash
-# Use a config file
-obsidian-export convert --input note.md --format pdf --output note.pdf --config my_config.yaml
+# Use a config file (pass the file path as --profile)
+obsidian-export convert --input note.md --format pdf --output note.pdf --profile my_config.yaml
 
 # Use a named profile
 obsidian-export convert --input note.md --format pdf --output note.pdf --profile my_brand
@@ -43,11 +43,13 @@ config = default_config()
 mermaid:
   mmdc_bin: "mmdc"          # Path to Mermaid CLI binary
   scale: 3                  # PNG render scale
+  puppeteer_config: null    # Optional path to puppeteer config JSON
 
 obsidian:
   wikilink_strategy: "text"           # How to handle [[wikilinks]]
   url_strategy: "footnote_long"       # bare URL handling: keep|footnote_long|footnote_all|strip
   url_length_threshold: 60            # URL length for footnote_long strategy
+  max_embed_depth: 10                 # Maximum recursive embed depth
 
 pandoc:
   from_format: "gfm-tex_math_dollars+footnotes" # Pandoc input format
@@ -117,6 +119,7 @@ Controls Mermaid diagram rendering. Requires [mermaid-cli](https://github.com/me
 |-------|------|-------------|
 | `mmdc_bin` | string | Path to the mmdc binary |
 | `scale` | integer | PNG render scale factor |
+| `puppeteer_config` | string or null | Path to a Puppeteer config JSON file (optional) |
 
 ### `obsidian`
 
@@ -127,6 +130,7 @@ Controls Obsidian-specific syntax handling.
 | `wikilink_strategy` | string | How to convert wikilinks (`text`) |
 | `url_strategy` | string | URL handling: `keep`, `footnote_long`, `footnote_all`, `strip` |
 | `url_length_threshold` | integer | URL length threshold for `footnote_long` strategy |
+| `max_embed_depth` | integer | Maximum recursive depth for `![[embed]]` resolution |
 
 ### `pandoc`
 
