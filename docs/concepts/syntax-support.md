@@ -22,7 +22,7 @@ Wikilinks are converted to plain text. The display text is preserved when availa
 
 ## Embed Resolution
 
-Embeds (`![[filename]]`) are recursively resolved — the referenced file's content is inlined at the embed location. Circular references are detected and reported as warnings.
+Embeds (`![[filename]]`) are recursively resolved — the referenced file's content is inlined at the embed location. Circular references are detected and raise a `CircularEmbedError`.
 
 ## Callout Styles
 

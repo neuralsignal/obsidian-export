@@ -55,4 +55,4 @@ Pass the profile name to the `convert` command:
 obsidian-export convert --input my_note.md --format pdf --output my_note.pdf --profile my_brand
 ```
 
-When no `--profile` is specified, the built-in defaults are used. If a `--config` file is provided instead, its values override the defaults directly without involving the profile system.
+When no `--profile` is specified, the built-in defaults are used. You can also pass a path to a config YAML file directly to `--profile` — if the value is an existing file path, it is loaded as a config file rather than looked up as a profile name.
