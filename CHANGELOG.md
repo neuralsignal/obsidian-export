@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.4.0](https://github.com/neuralsignal/obsidian-export/compare/v0.3.0...v0.4.0) (2026-03-17)
+
+
+### Features
+
+* redesign factory dashboard from append-only to edit-in-place ([096e24b](https://github.com/neuralsignal/obsidian-export/commit/096e24b5a619c555cb1ac33332137dec2162b833))
+* redesign factory dashboard to edit-in-place ([497fd99](https://github.com/neuralsignal/obsidian-export/commit/497fd994ec9f8dd85030d1875d03acb91941afd5))
+
+
+### Bug Fixes
+
+* add vault boundary check for SVG paths in stage3_svg ([#35](https://github.com/neuralsignal/obsidian-export/issues/35)) ([c50c550](https://github.com/neuralsignal/obsidian-export/commit/c50c550390485dbab5026e83657fbe07c12de97c))
+* regenerate pixi.lock in release-please PR ([9999c1d](https://github.com/neuralsignal/obsidian-export/commit/9999c1db73a6a7c57ceaed4425929a295239b37e))
+* regenerate pixi.lock in release-please PR ([d9914c7](https://github.com/neuralsignal/obsidian-export/commit/d9914c743b16ef7c98fad5108b3312a7775f3e14))
+* replace broken plugin approach in pr-code-review with direct prompt + post step ([351f2ec](https://github.com/neuralsignal/obsidian-export/commit/351f2ec19e47eea9baf32e049c06ac35fc136cd6))
+
+
+### Documentation
+
+* add agentic engineering and missing constitution principles to CLAUDE.md ([8fc9345](https://github.com/neuralsignal/obsidian-export/commit/8fc93457a45b6cf2a3fcf8bcac118f6dd5eeb1f5))
+* add agentic engineering, change safety, and missing constitution principles to CLAUDE.md ([e12e3bb](https://github.com/neuralsignal/obsidian-export/commit/e12e3bb9aa39016d396aa1f78a949212d30e6481))
+* sync documentation with codebase ([e6373e9](https://github.com/neuralsignal/obsidian-export/commit/e6373e9eef21157035b1d83565e8dfad83dd327c))
+* sync documentation with codebase changes ([a34c2ff](https://github.com/neuralsignal/obsidian-export/commit/a34c2ffb477606eb437d94fd3eb68c11c0cebc4d))
+
 ## 0.3.0 (2026-03-09)
 
 - Feat: DOCX output now applies Lua filters for callout boxes, footnote promotion, and page breaks
