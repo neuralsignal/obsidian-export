@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.4.1](https://github.com/neuralsignal/obsidian-export/compare/v0.4.0...v0.4.1) (2026-03-18)
+
+
+### Bug Fixes
+
+* auto-fix CI failures (attempt 1) ([b7afe6e](https://github.com/neuralsignal/obsidian-export/commit/b7afe6e3ca2e11337b9efc324f60ff2e0b0cc180))
+* escape double quotes in callout titles before Pandoc interpolation ([3c9a55f](https://github.com/neuralsignal/obsidian-export/commit/3c9a55fa08e985deade48cd6cea90fc7d9d3f410))
+* escape double quotes in callout titles before Pandoc interpolation ([908b501](https://github.com/neuralsignal/obsidian-export/commit/908b50189d520432c885aebd73f66cbd8d0248be)), closes [#57](https://github.com/neuralsignal/obsidian-export/issues/57)
+
 ## [0.4.0](https://github.com/neuralsignal/obsidian-export/compare/v0.3.0...v0.4.0) (2026-03-17)
 
 
