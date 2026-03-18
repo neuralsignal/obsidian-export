@@ -71,8 +71,9 @@ def _callout_replacement(m: re.Match) -> str:
     if not title:
         title = callout_type.capitalize()
 
+    escaped_title = title.replace("\\", "\\\\").replace('"', "&quot;")
     div_class = f".{callout_type}"
-    return f':::{{{div_class} title="{title}"}}\n{body}\n:::\n\n'
+    return f':::{{{div_class} title="{escaped_title}"}}\n{body}\n:::\n\n'
 
 
 def convert_callouts(text: str) -> str:
