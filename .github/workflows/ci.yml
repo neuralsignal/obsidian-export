@@ -14,6 +14,7 @@ jobs:
       - uses: prefix-dev/setup-pixi@v0.8.8
         with:
           cache: true
+          locked: false
       - run: pixi run lint
       - run: pixi run format-check
 
@@ -24,6 +25,7 @@ jobs:
       - uses: prefix-dev/setup-pixi@v0.8.8
         with:
           cache: true
+          locked: false
       - name: Install mmdc via npm
         run: pixi run setup-mmdc
       - name: Install system deps for Puppeteer (mmdc headless Chrome)
