@@ -91,6 +91,17 @@ class TestConvertCallouts:
         result = convert_callouts(text)
         assert result.count(":::") >= 2
 
+    def test_title_with_double_quotes_escaped(self) -> None:
+        text = '> [!NOTE] My "important" note\n> Content.\n'
+        result = convert_callouts(text)
+        assert '&quot;' in result
+        assert 'title="My &quot;important&quot; note"' in result
+
+    def test_title_with_backslash_escaped(self) -> None:
+        text = "> [!NOTE] Path C:\\Users\n> Content.\n"
+        result = convert_callouts(text)
+        assert "C:\\\\Users" in result
+
 
 # ── process_urls ──────────────────────────────────────────────────────────────
 
