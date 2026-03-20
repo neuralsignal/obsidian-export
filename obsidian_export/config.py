@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from importlib import resources
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -108,43 +109,21 @@ def _load_default_yaml() -> dict:
     return yaml.safe_load(ref.read_text(encoding="utf-8"))
 
 
-def _build_config(raw: dict, config_dir: Path | None) -> ConvertConfig:
-    """Build ConvertConfig from a raw dict. Resolve relative paths if config_dir given."""
-    if config_dir is not None and not config_dir.is_absolute():
-        config_dir = config_dir.resolve()
+def _resolve_path(raw_path: str, config_dir: Path | None) -> str:
+    """Resolve a relative path string against config_dir. Return as string."""
+    if raw_path and config_dir and not Path(raw_path).is_absolute():
+        return str((config_dir / raw_path).resolve())
+    return raw_path
 
-    mermaid_raw = raw["mermaid"]
-    mmdc_bin_raw = Path(mermaid_raw["mmdc_bin"])
-    if config_dir and not mmdc_bin_raw.is_absolute():
-        mmdc_bin_raw = config_dir / mmdc_bin_raw
 
-    puppeteer_config_raw = mermaid_raw.get("puppeteer_config")
-    puppeteer_config: Path | None = None
-    if puppeteer_config_raw:
-        puppeteer_config = Path(puppeteer_config_raw)
-        if config_dir and not puppeteer_config.is_absolute():
-            puppeteer_config = config_dir / puppeteer_config
+def _parse_brand_colors(raw: dict[str, Any]) -> tuple[tuple[str, int, int, int], ...]:
+    """Parse brand_colors dict {name: [r,g,b]} into tuple of (name, r, g, b)."""
+    return tuple((name, int(rgb[0]), int(rgb[1]), int(rgb[2])) for name, rgb in raw.items())
 
-    style_raw = raw["style"]
-    cc_raw = style_raw["callout_colors"]
 
-    # Resolve relative style_dir against config_dir (same as mmdc_bin)
-    style_dir_raw = style_raw["style_dir"]
-    if style_dir_raw and config_dir and not Path(style_dir_raw).is_absolute():
-        style_dir_raw = str((config_dir / style_dir_raw).resolve())
-
-    # Resolve logo path relative to config_dir if non-empty and not absolute
-    logo_raw = style_raw["logo"]
-    if logo_raw and config_dir and not Path(logo_raw).is_absolute():
-        logo_raw = str((config_dir / logo_raw).resolve())
-
-    # Parse brand_colors: dict {name: [r,g,b]} -> tuple of (name, r, g, b)
-    brand_colors_raw = style_raw.get("brand_colors", {}) or {}
-    brand_colors = tuple((name, int(rgb[0]), int(rgb[1]), int(rgb[2])) for name, rgb in brand_colors_raw.items())
-
-    # Parse heading_styles: list of dicts -> tuple of HeadingStyle
-    heading_styles_raw = style_raw.get("heading_styles", []) or []
-    heading_styles = tuple(
+def _parse_heading_styles(raw: list[dict[str, Any]]) -> tuple[HeadingStyle, ...]:
+    """Parse list of heading style dicts into tuple of HeadingStyle."""
+    return tuple(
         HeadingStyle(
             level=h["level"],
             size=h["size"],
@@ -153,29 +132,92 @@ def _build_config(raw: dict, config_dir: Path | None) -> ConvertConfig:
             color=h.get("color", ""),
             uppercase=bool(h.get("uppercase", False)),
         )
-        for h in heading_styles_raw
+        for h in raw
     )
 
-    # Parse title_style: dict or None -> TitleStyle or None
-    title_style_raw = style_raw.get("title_style")
-    if title_style_raw:
-        title_style: TitleStyle | None = TitleStyle(
-            size=title_style_raw["size"],
-            bold=bool(title_style_raw.get("bold", False)),
-            sans=bool(title_style_raw.get("sans", False)),
-            color=title_style_raw.get("color", ""),
-            date_visible=bool(title_style_raw.get("date_visible", True)),
-            vskip_after=title_style_raw.get("vskip_after", ""),
-        )
-    else:
-        title_style = None
+
+def _parse_title_style(raw: dict[str, Any] | None) -> TitleStyle | None:
+    """Parse title style dict into TitleStyle, or None if absent."""
+    if not raw:
+        return None
+    return TitleStyle(
+        size=raw["size"],
+        bold=bool(raw.get("bold", False)),
+        sans=bool(raw.get("sans", False)),
+        color=raw.get("color", ""),
+        date_visible=bool(raw.get("date_visible", True)),
+        vskip_after=raw.get("vskip_after", ""),
+    )
+
+
+def _parse_unicode_chars(raw: dict[str, str]) -> tuple[tuple[str, str], ...]:
+    """Parse unicode_chars dict {char: latex} into tuple of (char, latex)."""
+    return tuple((char, latex) for char, latex in raw.items())
+
+
+def _build_mermaid_config(raw: dict[str, Any], config_dir: Path | None) -> MermaidConfig:
+    """Build MermaidConfig, resolving relative paths against config_dir."""
+    mmdc_bin = Path(raw["mmdc_bin"])
+    if config_dir and not mmdc_bin.is_absolute():
+        mmdc_bin = config_dir / mmdc_bin
+
+    puppeteer_config_raw = raw.get("puppeteer_config")
+    puppeteer_config: Path | None = None
+    if puppeteer_config_raw:
+        puppeteer_config = Path(puppeteer_config_raw)
+        if config_dir and not puppeteer_config.is_absolute():
+            puppeteer_config = config_dir / puppeteer_config
+
+    return MermaidConfig(
+        mmdc_bin=mmdc_bin,
+        scale=raw["scale"],
+        puppeteer_config=puppeteer_config,
+    )
+
+
+def _build_style_config(raw: dict[str, Any], config_dir: Path | None) -> StyleConfig:
+    """Build StyleConfig from raw style dict."""
+    cc_raw = raw["callout_colors"]
+    return StyleConfig(
+        name=raw["name"],
+        geometry=raw["geometry"],
+        fontsize=raw["fontsize"],
+        mainfont=raw["mainfont"],
+        sansfont=raw["sansfont"],
+        monofont=raw["monofont"],
+        linkcolor=raw["linkcolor"],
+        urlcolor=raw["urlcolor"],
+        line_spacing=float(raw["line_spacing"]),
+        table_fontsize=raw["table_fontsize"],
+        image_max_height_ratio=float(raw["image_max_height_ratio"]),
+        url_footnote_threshold=int(raw["url_footnote_threshold"]),
+        header_left=raw["header_left"],
+        header_right=raw["header_right"],
+        footer_left=raw["footer_left"],
+        footer_center=raw["footer_center"],
+        footer_right=raw["footer_right"],
+        callout_colors=CalloutColors(
+            note=tuple(cc_raw["note"]),
+            tip=tuple(cc_raw["tip"]),
+            warning=tuple(cc_raw["warning"]),
+            danger=tuple(cc_raw["danger"]),
+        ),
+        unicode_chars=_parse_unicode_chars(raw.get("unicode_chars", {})),
+        logo=_resolve_path(raw["logo"], config_dir),
+        style_dir=_resolve_path(raw["style_dir"], config_dir),
+        brand_colors=_parse_brand_colors(raw.get("brand_colors", {}) or {}),
+        heading_styles=_parse_heading_styles(raw.get("heading_styles", []) or []),
+        title_style=_parse_title_style(raw.get("title_style")),
+    )
+
+
+def _build_config(raw: dict, config_dir: Path | None) -> ConvertConfig:
+    """Build ConvertConfig from a raw dict. Resolve relative paths if config_dir given."""
+    if config_dir is not None and not config_dir.is_absolute():
+        config_dir = config_dir.resolve()
 
     return ConvertConfig(
-        mermaid=MermaidConfig(
-            mmdc_bin=mmdc_bin_raw,
-            scale=mermaid_raw["scale"],
-            puppeteer_config=puppeteer_config,
-        ),
+        mermaid=_build_mermaid_config(raw["mermaid"], config_dir),
         obsidian=ObsidianConfig(
             wikilink_strategy=raw["obsidian"]["wikilink_strategy"],
             url_strategy=raw["obsidian"]["url_strategy"],
@@ -185,37 +227,7 @@ def _build_config(raw: dict, config_dir: Path | None) -> ConvertConfig:
         pandoc=PandocConfig(
             from_format=raw["pandoc"]["from_format"],
         ),
-        style=StyleConfig(
-            name=style_raw["name"],
-            geometry=style_raw["geometry"],
-            fontsize=style_raw["fontsize"],
-            mainfont=style_raw["mainfont"],
-            sansfont=style_raw["sansfont"],
-            monofont=style_raw["monofont"],
-            linkcolor=style_raw["linkcolor"],
-            urlcolor=style_raw["urlcolor"],
-            line_spacing=float(style_raw["line_spacing"]),
-            table_fontsize=style_raw["table_fontsize"],
-            image_max_height_ratio=float(style_raw["image_max_height_ratio"]),
-            url_footnote_threshold=int(style_raw["url_footnote_threshold"]),
-            header_left=style_raw["header_left"],
-            header_right=style_raw["header_right"],
-            footer_left=style_raw["footer_left"],
-            footer_center=style_raw["footer_center"],
-            footer_right=style_raw["footer_right"],
-            callout_colors=CalloutColors(
-                note=tuple(cc_raw["note"]),
-                tip=tuple(cc_raw["tip"]),
-                warning=tuple(cc_raw["warning"]),
-                danger=tuple(cc_raw["danger"]),
-            ),
-            unicode_chars=tuple((char, latex) for char, latex in style_raw.get("unicode_chars", {}).items()),
-            logo=logo_raw,
-            style_dir=style_dir_raw,
-            brand_colors=brand_colors,
-            heading_styles=heading_styles,
-            title_style=title_style,
-        ),
+        style=_build_style_config(raw["style"], config_dir),
     )
 
 
