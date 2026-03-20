@@ -45,16 +45,20 @@ def _convert_svg_images(body: str, tmpdir: Path, resource_path: Path | None, rsv
         counter += 1
         out_path = tmpdir / f"svg_{counter}{file_ext}"
 
-        subprocess.run(
-            [
-                "rsvg-convert",
-                f"--format={rsvg_format}",
-                f"--output={out_path}",
-                str(svg_path),
-            ],
-            check=True,
-            capture_output=True,
-        )
+        try:
+            subprocess.run(
+                [
+                    "rsvg-convert",
+                    f"--format={rsvg_format}",
+                    f"--output={out_path}",
+                    str(svg_path),
+                ],
+                check=True,
+                capture_output=True,
+            )
+        except subprocess.CalledProcessError as exc:
+            stderr = exc.stderr.decode(errors="replace") if exc.stderr else "(no stderr)"
+            raise SVGConversionError(f"rsvg-convert failed for {svg_path} (exit {exc.returncode}): {stderr}") from exc
 
         return f"![{alt_text}]({out_path})"
 
