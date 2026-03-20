@@ -18,6 +18,21 @@ _WIKILINK_PIPE_RE = re.compile(r"\[\[([^\]|]+)\|([^\]]+)\]\]")
 _WIKILINK_BARE_RE = re.compile(r"\[\[([^\]]+)\]\]")
 _RELATIONS_RE = re.compile(r"\n## Relations\b.*", re.DOTALL | re.IGNORECASE)
 
+IMAGE_EXTENSIONS = frozenset(
+    {
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".gif",
+        ".svg",
+        ".webp",
+        ".bmp",
+        ".tiff",
+        ".tif",
+        ".avif",
+    }
+)
+
 
 @dataclass(frozen=True)
 class EmbedContext:
@@ -109,7 +124,7 @@ def resolve_embeds(
 
     - Text embeds: resolved inline (with depth cap)
     - Section embeds (![[note#Heading]]): extract section
-    - Image embeds (.png, .jpg, .svg, .gif, .webp): converted to ![]() refs
+    - Image embeds (extensions in IMAGE_EXTENSIONS): converted to ![]() refs
     - Missing embeds: raise EmbedNotFoundError
     - Circular embeds: raise CircularEmbedError
     """
@@ -137,7 +152,8 @@ def _resolve_embeds_recursive(
         raw = m.group(1).strip()
 
         # Image embed check
-        if re.search(r"\.(png|jpg|jpeg|gif|svg|webp)$", raw, re.IGNORECASE):
+        suffix = Path(raw).suffix.lower()
+        if suffix in IMAGE_EXTENSIONS:
             img_path = (ctx.vault_root / raw).resolve()
             if not img_path.is_relative_to(vault_resolved):
                 raise PathTraversalError(f"Embed path escapes vault root: {raw!r} resolved to {img_path}")
