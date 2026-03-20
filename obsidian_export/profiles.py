@@ -2,6 +2,7 @@
 
 import re
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -54,7 +55,7 @@ def load_profile(name: str) -> ConvertConfig:
     return load_config(path)
 
 
-def save_profile(name: str, config_dict: dict) -> Path:
+def save_profile(name: str, config_dict: dict[str, Any]) -> Path:
     """Save a profile YAML to ~/.obsidian-export/profiles/."""
     init_user_dir()
     path = get_profile_path(name)

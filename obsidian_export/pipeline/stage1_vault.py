@@ -3,6 +3,7 @@
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -52,7 +53,7 @@ def _quote_yaml_values(raw: str) -> str:
     return "".join(fixed_lines)
 
 
-def parse_frontmatter(text: str) -> tuple[dict, str]:
+def parse_frontmatter(text: str) -> tuple[dict[str, Any], str]:
     """Extract YAML frontmatter. Returns (metadata_dict, body_text)."""
     m = _FRONTMATTER_RE.match(text)
     if not m:
@@ -67,7 +68,7 @@ def parse_frontmatter(text: str) -> tuple[dict, str]:
     return fm, body
 
 
-def clean_frontmatter(fm: dict) -> dict:
+def clean_frontmatter(fm: dict[str, Any]) -> dict[str, Any]:
     """Strip Obsidian-only keys; convert tags list to keywords string for Pandoc."""
     cleaned = {k: v for k, v in fm.items() if k not in _OBSIDIAN_KEYS}
     if "tags" in fm:

@@ -92,7 +92,7 @@ class ConvertConfig:
     style: StyleConfig
 
 
-def _deep_merge(base: dict, override: dict) -> dict:
+def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
     """Recursively merge override into base. override wins on conflicts."""
     merged = dict(base)
     for key, value in override.items():
@@ -103,7 +103,7 @@ def _deep_merge(base: dict, override: dict) -> dict:
     return merged
 
 
-def _load_default_yaml() -> dict:
+def _load_default_yaml() -> dict[str, Any]:
     """Load the bundled default.yaml."""
     ref = resources.files("obsidian_export") / "defaults" / "default.yaml"
     return yaml.safe_load(ref.read_text(encoding="utf-8"))
