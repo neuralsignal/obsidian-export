@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/neuralsignal/obsidian-export/compare/v0.4.1...v0.4.2) (2026-03-20)
+
+
+### Bug Fixes
+
+* wrap rsvg-convert subprocess in SVGConversionError handler ([#63](https://github.com/neuralsignal/obsidian-export/issues/63)) ([fc2bca8](https://github.com/neuralsignal/obsidian-export/commit/fc2bca8613ba883c77db1a6f9b05d649ed374039))
+
 ## [0.4.1](https://github.com/neuralsignal/obsidian-export/compare/v0.4.0...v0.4.1) (2026-03-18)
 
 

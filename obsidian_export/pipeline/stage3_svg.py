@@ -56,6 +56,8 @@ def _convert_svg_images(body: str, tmpdir: Path, resource_path: Path | None, rsv
                 check=True,
                 capture_output=True,
             )
+        except FileNotFoundError as exc:
+            raise SVGConversionError("rsvg-convert not found: is librsvg installed?") from exc
         except subprocess.CalledProcessError as exc:
             stderr = exc.stderr.decode(errors="replace") if exc.stderr else "(no stderr)"
             raise SVGConversionError(f"rsvg-convert failed for {svg_path} (exit {exc.returncode}): {stderr}") from exc
