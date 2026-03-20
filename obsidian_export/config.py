@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from importlib import resources
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -91,7 +92,7 @@ class ConvertConfig:
     style: StyleConfig
 
 
-def _deep_merge(base: dict, override: dict) -> dict:
+def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
     """Recursively merge override into base. override wins on conflicts."""
     merged = dict(base)
     for key, value in override.items():
@@ -102,13 +103,13 @@ def _deep_merge(base: dict, override: dict) -> dict:
     return merged
 
 
-def _load_default_yaml() -> dict:
+def _load_default_yaml() -> dict[str, Any]:
     """Load the bundled default.yaml."""
     ref = resources.files("obsidian_export") / "defaults" / "default.yaml"
     return yaml.safe_load(ref.read_text(encoding="utf-8"))
 
 
-def _build_config(raw: dict, config_dir: Path | None) -> ConvertConfig:
+def _build_config(raw: dict[str, Any], config_dir: Path | None) -> ConvertConfig:
     """Build ConvertConfig from a raw dict. Resolve relative paths if config_dir given."""
     if config_dir is not None and not config_dir.is_absolute():
         config_dir = config_dir.resolve()

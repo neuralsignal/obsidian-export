@@ -4,6 +4,7 @@ import subprocess
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -23,7 +24,7 @@ class PandocInvocation:
     resource_path: Path | None
 
 
-def _yaml_metadata_block(metadata: dict) -> str:
+def _yaml_metadata_block(metadata: dict[str, Any]) -> str:
     """Build a pandoc YAML metadata block from a dict.
 
     This safely handles values containing colons, quotes, and other
@@ -35,7 +36,7 @@ def _yaml_metadata_block(metadata: dict) -> str:
 def _run_pandoc(
     invocation: PandocInvocation,
     lua_filter_names: list[str],
-    metadata: dict,
+    metadata: dict[str, Any],
     extra_args: list[str],
 ) -> None:
     """Shared scaffolding for pandoc conversion.
