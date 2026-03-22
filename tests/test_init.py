@@ -64,6 +64,16 @@ class TestResolveStyleDirExplicit:
             _resolve_style_dir(style)
 
 
+class TestResolveStyleDirBuiltin:
+    """Lines 45-47: built-in style resolution."""
+
+    def test_builtin_style(self) -> None:
+        style = _make_style(name="default", style_dir="")
+        result = _resolve_style_dir(style)
+        expected = Path(__file__).resolve().parent.parent / "obsidian_export" / "assets" / "styles" / "default"
+        assert result == expected
+
+
 class TestResolveStyleDirUserStyles:
     """Lines 50-59: user-styles path, path-as-name fallback, final error."""
 
@@ -76,14 +86,16 @@ class TestResolveStyleDirUserStyles:
         with patch("obsidian_export.USER_STYLES_DIR", user_styles):
             assert _resolve_style_dir(style) == style_subdir
 
-    def test_path_as_name_fallback(self, tmp_path: Path) -> None:
+    def test_path_as_name_fallback(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         theme_dir = tmp_path / "custom-theme"
         theme_dir.mkdir()
 
-        style = _make_style(name=str(theme_dir), style_dir="")
-        # Patch USER_STYLES_DIR to a non-existent dir so it skips that branch
+        # Use a relative path so Path(parent) / name doesn't collapse to the
+        # absolute path (which would match the builtin check instead).
+        monkeypatch.chdir(tmp_path)
+        style = _make_style(name="custom-theme", style_dir="")
         with patch("obsidian_export.USER_STYLES_DIR", tmp_path / "no-user-styles"):
-            assert _resolve_style_dir(style) == theme_dir
+            assert _resolve_style_dir(style) == Path("custom-theme")
 
     def test_unknown_style_raises(self, tmp_path: Path) -> None:
         style = _make_style(name="nonexistent-style-xyz", style_dir="")
@@ -92,6 +104,21 @@ class TestResolveStyleDirUserStyles:
             pytest.raises(FileNotFoundError, match="Style not found"),
         ):
             _resolve_style_dir(style)
+
+    def test_resolve_style_dir_all_paths_fail(self, tmp_path: Path) -> None:
+        """Error message names all three checked locations."""
+        name = "totally-unknown-style"
+        style = _make_style(name=name, style_dir="")
+        user_dir = tmp_path / "no-user-styles"
+        with (
+            patch("obsidian_export.USER_STYLES_DIR", user_dir),
+            pytest.raises(FileNotFoundError, match=name) as exc_info,
+        ):
+            _resolve_style_dir(style)
+        msg = str(exc_info.value)
+        assert "styles" in msg
+        assert str(user_dir / name) in msg
+        assert name in msg
 
 
 class TestRunUnsupportedFormat:
