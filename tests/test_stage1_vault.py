@@ -8,6 +8,7 @@ from hypothesis import strategies as st
 
 from obsidian_export.exceptions import CircularEmbedError, EmbedNotFoundError, PathTraversalError
 from obsidian_export.pipeline.stage1_vault import (
+    _extract_section,
     clean_frontmatter,
     parse_frontmatter,
     resolve_embeds,
@@ -303,3 +304,69 @@ class TestResolveEmbeds:
         text = "![[../secret.png]]"
         with pytest.raises(PathTraversalError):
             resolve_embeds(text, vault, vault / "note.md", 10)
+
+    def test_depth_exceeded_returns_content_unchanged(self, tmp_path: Path) -> None:
+        """When recursion depth exceeds max_embed_depth, embeds are not resolved."""
+        (tmp_path / "a.md").write_text("A content ![[b]]", encoding="utf-8")
+        (tmp_path / "b.md").write_text("B content", encoding="utf-8")
+        # max_embed_depth=0 means the very first recursive call (depth=1) exceeds the cap
+        text = "![[a]]"
+        result = resolve_embeds(text, tmp_path, tmp_path / "root.md", max_embed_depth=0)
+        # The top-level call (depth=0) resolves a.md, but a.md's embed of b is not resolved
+        assert "A content" in result
+        assert "![[b]]" in result
+
+    def test_image_embed_rglob_fallback(self, tmp_path: Path) -> None:
+        """Image not at direct path but found via rglob in a subdirectory."""
+        subdir = tmp_path / "assets" / "images"
+        subdir.mkdir(parents=True)
+        img = subdir / "photo.png"
+        img.write_bytes(b"\x89PNG\r\n\x1a\n")
+        # Embed references just the filename, not the subdirectory path
+        text = "![[photo.png]]"
+        result = resolve_embeds(text, tmp_path, tmp_path / "note.md", max_embed_depth=10)
+        assert f"![]({img})" == result
+
+    def test_image_embed_missing_fallback(self, tmp_path: Path) -> None:
+        """Image not found anywhere returns a broken image ref without raising."""
+        text = "![[nonexistent.png]]"
+        result = resolve_embeds(text, tmp_path, tmp_path / "note.md", max_embed_depth=10)
+        assert "![nonexistent.png](" in result
+        assert "nonexistent.png)" in result
+
+
+# ── _extract_section ─────────────────────────────────────────────────────────
+
+
+class TestExtractSection:
+    def test_heading_not_found(self) -> None:
+        text = "# Intro\n\nSome content.\n\n## Other\n\nMore content."
+        result = _extract_section(text, "Nonexistent")
+        assert result == "[Section 'Nonexistent' not found]"
+
+    def test_section_extends_to_eof(self) -> None:
+        """Target heading has no subsequent same-level heading — content to EOF."""
+        text = "# Intro\n\nIntro text.\n\n## Last Section\n\nFinal content here."
+        result = _extract_section(text, "Last Section")
+        assert result == "Final content here."
+
+    def test_section_between_headings(self) -> None:
+        text = "## A\n\nA content.\n\n## B\n\nB content.\n\n## C\n\nC content."
+        result = _extract_section(text, "B")
+        assert result == "B content."
+
+    def test_case_insensitive_heading_match(self) -> None:
+        text = "## my heading\n\nContent here.\n\n## Other\n\nOther content."
+        result = _extract_section(text, "My Heading")
+        assert result == "Content here."
+
+
+# ── Property-based: _extract_section ─────────────────────────────────────────
+
+
+@given(st.text(alphabet=st.characters(categories=("L", "N", "Z")), min_size=1, max_size=50))
+@settings(max_examples=100)
+def test_extract_section_not_found_returns_sentinel(heading: str) -> None:
+    """For any heading not present in empty text, the sentinel string is returned."""
+    result = _extract_section("No headings here.", heading)
+    assert result == f"[Section '{heading}' not found]"
