@@ -16,6 +16,7 @@ from obsidian_export.config import (
     PandocConfig,
     StyleConfig,
     TitleStyle,
+    _build_config,
     _deep_merge,
     _parse_brand_colors,
     _parse_heading_styles,
@@ -539,3 +540,61 @@ def test_parse_unicode_chars_property(data: dict[str, str]) -> None:
     result = _parse_unicode_chars(data)
     assert len(result) == len(data)
     assert dict(result) == data
+
+
+# ── puppeteer_config resolution ────────────────────────────────────────────
+
+
+def test_load_config_puppeteer_config_relative_resolved(tmp_path: Path) -> None:
+    """Relative puppeteer_config is resolved against the config file directory."""
+    data = dict(VALID_DATA)
+    data["mermaid"] = {
+        **VALID_DATA["mermaid"],
+        "puppeteer_config": "puppeteer-config.json",
+    }
+    cfg = _write_config(tmp_path, data)
+    result = load_config(cfg)
+    assert result.mermaid.puppeteer_config == tmp_path / "puppeteer-config.json"
+    assert result.mermaid.puppeteer_config.is_absolute()
+
+
+def test_load_config_puppeteer_config_absolute_preserved(tmp_path: Path) -> None:
+    """Absolute puppeteer_config is preserved as-is."""
+    data = dict(VALID_DATA)
+    data["mermaid"] = {
+        **VALID_DATA["mermaid"],
+        "puppeteer_config": "/etc/puppeteer.json",
+    }
+    cfg = _write_config(tmp_path, data)
+    result = load_config(cfg)
+    assert result.mermaid.puppeteer_config == Path("/etc/puppeteer.json")
+
+
+# ── _build_config with relative config_dir ─────────────────────────────────
+
+
+def test_build_config_with_relative_config_dir(tmp_path: Path) -> None:
+    """Passing a relative config_dir to _build_config resolves it to absolute."""
+    import os
+
+    original_dir = os.getcwd()
+    os.chdir(tmp_path)
+    try:
+        rel_dir = Path("subdir")
+        rel_dir.mkdir()
+        raw = {
+            "mermaid": {"mmdc_bin": "mmdc", "scale": 3},
+            "obsidian": {
+                "wikilink_strategy": "text",
+                "url_strategy": "footnote_long",
+                "url_length_threshold": 60,
+                "max_embed_depth": 10,
+            },
+            "pandoc": {"from_format": "gfm"},
+            "style": VALID_DATA["style"],
+        }
+        result = _build_config(raw, config_dir=rel_dir)
+        assert result.mermaid.mmdc_bin.is_absolute()
+        assert str(result.mermaid.mmdc_bin) == str((tmp_path / "subdir" / "mmdc").resolve())
+    finally:
+        os.chdir(original_dir)
