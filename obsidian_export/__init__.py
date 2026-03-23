@@ -17,6 +17,7 @@ from obsidian_export.pipeline.stage1_vault import (
     strip_obsidian_syntax,
 )
 from obsidian_export.pipeline.stage2_preprocess import preprocess
+from obsidian_export.pipeline.stage3_image import convert_images_for_docx, convert_images_for_pdf
 from obsidian_export.pipeline.stage3_mermaid import render_mermaid_blocks
 from obsidian_export.pipeline.stage3_svg import convert_svg_images, convert_svg_images_to_png
 from obsidian_export.pipeline.stage4_pandoc import PandocInvocation, convert_to_docx, convert_to_pdf
@@ -100,6 +101,12 @@ def run(
             body = convert_svg_images(body, Path(tmpdir), resource_path=input_path.parent)
         else:
             body = convert_svg_images_to_png(body, Path(tmpdir), resource_path=input_path.parent)
+
+        # Stage 3c: Non-SVG image conversion for format compatibility
+        if output_format == "pdf":
+            body = convert_images_for_pdf(body, Path(tmpdir), resource_path=input_path.parent)
+        else:
+            body = convert_images_for_docx(body, Path(tmpdir), resource_path=input_path.parent)
 
         # Stage 4: Pandoc conversion
         style_dir = _resolve_style_dir(config.style)

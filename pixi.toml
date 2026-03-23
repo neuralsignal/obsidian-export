@@ -17,6 +17,7 @@ hatchling = ">=1.28.0,<2"
 obsidian-export = {path = ".", editable = true}
 pyyaml = ">=6.0,<7"
 click = ">=8.0,<9"
+pillow = ">=10.0,<12"
 pytest = ">=8.0,<9"
 hypothesis = ">=6.0,<7"
 ruff = ">=0.11,<1"

@@ -17,6 +17,10 @@ class SVGConversionError(ObsidianExportError):
     """SVG file not found or conversion failed."""
 
 
+class ImageConversionError(ObsidianExportError):
+    """Non-SVG image conversion failed (e.g. WebP/AVIF/BMP/TIFF to PNG)."""
+
+
 class ProfileNameError(ObsidianExportError):
     """Profile name is invalid or contains path traversal sequences."""
 
