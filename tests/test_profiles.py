@@ -78,6 +78,26 @@ def test_get_profile_path_rejects_special_chars(tmp_path: Path) -> None:
         get_profile_path("name with spaces")
 
 
+def test_get_profile_path_traversal_after_resolve(tmp_path: Path) -> None:
+    """Cover the defence-in-depth guard on line 46: a name passes the regex but resolve() escapes PROFILE_DIR."""
+    profile_dir = tmp_path / "profiles"
+    profile_dir.mkdir()
+    escaped_path = tmp_path / "elsewhere" / "evil.yaml"
+    original_resolve = Path.resolve
+
+    def fake_resolve(self: Path) -> Path:
+        if self.name == "legit-name.yaml":
+            return escaped_path
+        return original_resolve(self)
+
+    with (
+        patch("obsidian_export.profiles.PROFILE_DIR", profile_dir),
+        patch.object(Path, "resolve", fake_resolve),
+        pytest.raises(ProfileNameError, match="path traversal detected"),
+    ):
+        get_profile_path("legit-name")
+
+
 # --- init_user_dir ---
 
 
