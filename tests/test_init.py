@@ -10,6 +10,7 @@ from obsidian_export.config import (
     CalloutColors,
     StyleConfig,
 )
+from obsidian_export.exceptions import UnsupportedFormatError
 
 
 def _make_style(
@@ -122,14 +123,14 @@ class TestResolveStyleDirUserStyles:
 
 
 class TestRunUnsupportedFormat:
-    """Line 76: ValueError for unsupported output_format."""
+    """Line 77: UnsupportedFormatError for unsupported output_format."""
 
     def test_unsupported_format_raises(self, tmp_path: Path) -> None:
         dummy_input = tmp_path / "note.md"
         dummy_input.write_text("hello")
         dummy_output = tmp_path / "out.html"
 
-        with pytest.raises(ValueError, match="Unsupported output format"):
+        with pytest.raises(UnsupportedFormatError, match="Unsupported output format"):
             run(
                 input_path=dummy_input,
                 output_path=dummy_output,
