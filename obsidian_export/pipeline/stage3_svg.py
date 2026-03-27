@@ -4,7 +4,8 @@ import re
 import subprocess
 from pathlib import Path
 
-from obsidian_export.exceptions import PathTraversalError, SVGConversionError
+from obsidian_export.exceptions import SVGConversionError
+from obsidian_export.pipeline.path_guards import assert_within_root
 
 _IMG_REF_RE = re.compile(r"!\[([^\]]*)\]\(([^)]+\.svg)\)")
 
@@ -34,10 +35,7 @@ def _convert_svg_images(body: str, tmpdir: Path, resource_path: Path | None, rsv
             svg_path = resource_path / svg_path
 
         if resource_path is not None:
-            resolved = svg_path.resolve()
-            root = resource_path.resolve()
-            if not resolved.is_relative_to(root):
-                raise PathTraversalError(f"SVG path escapes document root: {svg_raw!r} resolved to {svg_path}")
+            assert_within_root(svg_path, resource_path, "SVG")
 
         if not svg_path.exists():
             raise SVGConversionError(f"SVG file not found: {svg_path}")
