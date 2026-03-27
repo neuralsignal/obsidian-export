@@ -9,6 +9,8 @@ from hypothesis import strategies as st
 from obsidian_export.exceptions import CircularEmbedError, EmbedNotFoundError, PathTraversalError
 from obsidian_export.pipeline.stage1_vault import (
     _extract_section,
+    _resolve_image_embed,
+    _resolve_note_path,
     clean_frontmatter,
     parse_frontmatter,
     resolve_embeds,
@@ -333,6 +335,58 @@ class TestResolveEmbeds:
         result = resolve_embeds(text, tmp_path, tmp_path / "note.md", max_embed_depth=10)
         assert "![nonexistent.png](" in result
         assert "nonexistent.png)" in result
+
+
+# ── _resolve_image_embed ─────────────────────────────────────────────────────
+
+
+class TestResolveImageEmbed:
+    def test_existing_image_resolved(self, tmp_path: Path) -> None:
+        img = tmp_path / "photo.png"
+        img.write_bytes(b"\x89PNG")
+        result = _resolve_image_embed("photo.png", tmp_path, tmp_path.resolve())
+        assert result == f"![]({img.resolve()})"
+
+    def test_rglob_fallback(self, tmp_path: Path) -> None:
+        subdir = tmp_path / "assets"
+        subdir.mkdir()
+        img = subdir / "photo.png"
+        img.write_bytes(b"\x89PNG")
+        result = _resolve_image_embed("photo.png", tmp_path, tmp_path.resolve())
+        assert result == f"![]({img})"
+
+    def test_missing_image_returns_broken_ref(self, tmp_path: Path) -> None:
+        result = _resolve_image_embed("gone.png", tmp_path, tmp_path.resolve())
+        assert "![gone.png](" in result
+
+    def test_traversal_raises(self, tmp_path: Path) -> None:
+        vault = tmp_path / "vault"
+        vault.mkdir()
+        outside = tmp_path / "secret.png"
+        outside.write_bytes(b"\x89PNG")
+        with pytest.raises(PathTraversalError):
+            _resolve_image_embed("../secret.png", vault, vault.resolve())
+
+
+# ── _resolve_note_path ──────────────────────────────────────────────────────
+
+
+class TestResolveNotePath:
+    def test_finds_in_vault_root(self, tmp_path: Path) -> None:
+        (tmp_path / "note.md").write_text("content", encoding="utf-8")
+        result = _resolve_note_path("note", tmp_path, tmp_path / "other.md")
+        assert result == tmp_path / "note.md"
+
+    def test_falls_back_to_current_dir(self, tmp_path: Path) -> None:
+        subdir = tmp_path / "sub"
+        subdir.mkdir()
+        (subdir / "local.md").write_text("content", encoding="utf-8")
+        result = _resolve_note_path("local", tmp_path, subdir / "current.md")
+        assert result == subdir / "local.md"
+
+    def test_missing_raises(self, tmp_path: Path) -> None:
+        with pytest.raises(EmbedNotFoundError, match="nope"):
+            _resolve_note_path("nope", tmp_path, tmp_path / "current.md")
 
 
 # ── _extract_section ─────────────────────────────────────────────────────────
