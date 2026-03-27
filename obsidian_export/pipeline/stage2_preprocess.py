@@ -101,6 +101,11 @@ def process_urls(text: str, strategy: str, threshold: int) -> str:
         return text
 
     def replace_url(m: re.Match) -> str:
+        """Replace a bare URL match according to the active footnote strategy.
+
+        Receives a match whose group(1) is the URL. Returns either the original
+        match unchanged or a Pandoc footnote-formatted replacement string.
+        """
         url = m.group(1)
         if strategy == "footnote_all" or (strategy == "footnote_long" and len(url) > threshold):
             # Pandoc footnote syntax: [^N] — but inline footnotes are cleaner

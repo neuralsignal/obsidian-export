@@ -19,6 +19,13 @@ def _convert_svg_images(body: str, tmpdir: Path, resource_path: Path | None, rsv
     counter = 0
 
     def replace_svg(m: re.Match) -> str:
+        """Replace an SVG image reference with a rsvg-converted version.
+
+        Receives a match with group(1) as alt text and group(2) as the SVG path.
+        Skips URLs. Converts the SVG via rsvg-convert into tmpdir and returns an
+        updated markdown image reference. Increments the outer ``counter`` for
+        unique filenames.
+        """
         nonlocal counter
         alt_text = m.group(1)
         svg_raw = m.group(2)
