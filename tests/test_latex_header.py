@@ -8,6 +8,7 @@ import pytest
 from obsidian_export.config import CalloutColors, HeadingStyle, StyleConfig, TitleStyle, default_config
 from obsidian_export.pipeline.latex_header import (
     _build_brand_colors_block,
+    _build_code_block,
     _build_font_block,
     _build_header_footer_block,
     _build_heading_styles_block,
@@ -93,6 +94,29 @@ class TestBuildFontBlock:
     def test_injection_in_monofont_escaped(self) -> None:
         result = _build_font_block("", "", "font$hack")
         assert "\\$" in result
+
+
+class TestBuildCodeBlock:
+    def test_contains_fvextra(self) -> None:
+        result = _build_code_block("footnotesize")
+        assert "\\usepackage{fvextra}" in result
+
+    def test_contains_breaklines(self) -> None:
+        result = _build_code_block("footnotesize")
+        assert "breaklines=true" in result
+
+    def test_fontsize_cmd_in_fvset(self) -> None:
+        result = _build_code_block("footnotesize")
+        assert "\\footnotesize" in result
+
+    def test_fontsize_cmd_small(self) -> None:
+        result = _build_code_block("small")
+        assert "\\small" in result
+        assert "\\footnotesize" not in result
+
+    def test_defines_verbatim_environment(self) -> None:
+        result = _build_code_block("footnotesize")
+        assert "\\DefineVerbatimEnvironment{verbatim}" in result
 
 
 class TestBuildLineSpacingBlock:

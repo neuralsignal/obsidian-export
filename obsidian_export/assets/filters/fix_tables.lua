@@ -29,7 +29,7 @@ local function col_spec(align)
   elseif align == pandoc.AlignCenter then
     return ">{\\centering\\arraybackslash}X"
   else
-    return ">{\\raggedright\\arraybackslash}X"
+    return ">{\\RaggedRight\\arraybackslash}X"
   end
 end
 

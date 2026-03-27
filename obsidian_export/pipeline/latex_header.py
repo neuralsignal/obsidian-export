@@ -33,6 +33,7 @@ def render_header(style: StyleConfig, template_path: Path, title: str) -> str:
     brand_colors_block = _build_brand_colors_block(style.brand_colors)
     heading_styles_block = _build_heading_styles_block(style.heading_styles)
     title_style_block = _build_title_style_block(style.title_style)
+    code_block = _build_code_block(style.code_fontsize)
 
     cc = style.callout_colors
     return template.format(
@@ -56,6 +57,7 @@ def render_header(style: StyleConfig, template_path: Path, title: str) -> str:
         brand_colors_block=brand_colors_block,
         heading_styles_block=heading_styles_block,
         title_style_block=title_style_block,
+        code_block=code_block,
     )
 
 
@@ -184,6 +186,17 @@ def _build_title_style_block(title_style: TitleStyle | None) -> str:
     lines.append("}")
     lines.append("\\makeatother")
     return "\n".join(lines)
+
+
+def _build_code_block(code_fontsize: str) -> str:
+    """Generate fvextra setup for code block line-wrapping and font size control."""
+    cmd = f"\\{code_fontsize}"
+    return (
+        "\\usepackage{fvextra}\n"
+        f"\\fvset{{breaklines=true, fontsize={cmd}}}\n"
+        f"\\DefineVerbatimEnvironment{{verbatim}}{{Verbatim}}"
+        f"{{breaklines=true, fontsize={cmd}}}"
+    )
 
 
 def _build_header_footer_block(

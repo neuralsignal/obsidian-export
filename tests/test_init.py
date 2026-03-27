@@ -28,6 +28,7 @@ def _make_style(
         urlcolor="blue",
         line_spacing=1.0,
         table_fontsize="10pt",
+        code_fontsize="footnotesize",
         image_max_height_ratio=0.4,
         url_footnote_threshold=60,
         header_left="",
