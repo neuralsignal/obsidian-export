@@ -21,6 +21,13 @@ def render_mermaid_blocks(body: str, config: MermaidConfig, tmpdir: Path) -> str
     counter = 0
 
     def replace_block(m: re.Match) -> str:
+        """Replace a fenced mermaid code block with a rendered PNG image reference.
+
+        Receives a match whose group(1) is the mermaid diagram source. Writes the
+        source to a temporary file, invokes mmdc to render it as PNG, and returns
+        a markdown image reference to the output file. Increments the outer
+        ``counter`` for unique filenames.
+        """
         nonlocal counter
         if not mmdc.exists():
             raise FileNotFoundError(

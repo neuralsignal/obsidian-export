@@ -206,6 +206,13 @@ def _resolve_embeds_recursive(
     vault_resolved = ctx.vault_root.resolve()
 
     def replace_embed(m: re.Match) -> str:
+        """Replace a single ``![[...]]`` embed with its resolved content.
+
+        Receives a match whose group(1) is the embed target (filename, note#section,
+        or note#^block-id). Returns the replacement markdown string — an image
+        reference, the transcluded note/section content, or the original wikilink
+        when the target cannot be found.
+        """
         raw = m.group(1).strip()
         suffix = Path(raw).suffix.lower()
         if suffix in IMAGE_EXTENSIONS:

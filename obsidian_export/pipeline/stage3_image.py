@@ -42,6 +42,13 @@ def convert_images(
     counter = 0
 
     def replace_image(m: re.Match) -> str:
+        """Replace a single image reference with a PNG-converted version if needed.
+
+        Receives a match with group(1) as alt text and group(2) as the image path.
+        Skips URLs, SVGs, and natively supported formats. For unsupported formats,
+        converts the image to PNG in tmpdir and returns an updated markdown reference.
+        Increments the outer ``counter`` for unique filenames.
+        """
         nonlocal counter
         alt_text = m.group(1)
         img_raw = m.group(2)
