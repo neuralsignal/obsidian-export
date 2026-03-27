@@ -56,6 +56,7 @@ VALID_DATA = {
         "urlcolor": "NavyBlue",
         "line_spacing": 1.0,
         "table_fontsize": "small",
+        "code_fontsize": "footnotesize",
         "image_max_height_ratio": 0.40,
         "url_footnote_threshold": 60,
         "header_left": "",
@@ -133,6 +134,7 @@ def test_style_config_loaded(tmp_path: Path) -> None:
     assert result.style.urlcolor == "NavyBlue"
     assert result.style.line_spacing == 1.0
     assert result.style.table_fontsize == "small"
+    assert result.style.code_fontsize == "footnotesize"
     assert result.style.image_max_height_ratio == 0.40
     assert result.style.url_footnote_threshold == 60
     assert result.style.mainfont == ""
@@ -191,6 +193,19 @@ def test_default_config_returns_convert_config() -> None:
     assert result.style.fontsize == "10pt"
     assert result.mermaid.scale == 3
     assert result.obsidian.max_embed_depth == 10
+
+
+def test_default_config_code_fontsize() -> None:
+    result = default_config()
+    assert result.style.code_fontsize == "footnotesize"
+
+
+def test_code_fontsize_override(tmp_path: Path) -> None:
+    partial = {"style": {"code_fontsize": "small"}}
+    cfg = _write_config(tmp_path, partial)
+    result = load_config(cfg)
+    assert result.style.code_fontsize == "small"
+    assert result.style.table_fontsize == "small"  # default unchanged
 
 
 # ── deep merge ──────────────────────────────────────────────────────────────

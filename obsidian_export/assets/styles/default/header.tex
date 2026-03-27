@@ -13,8 +13,9 @@
 % Nicer table rules
 \usepackage{{booktabs}}
 
-% Page-breaking tables with equal-width wrapping columns
+% Page-breaking tables with equal-width wrapping columns; ragged2e for hyphenation in cells
 \usepackage{{xltabular}}
+\usepackage{{ragged2e}}
 
 % Unicode math symbols — XeTeX resolves from unicode-math font automatically
 \usepackage{{fontspec}}
@@ -41,6 +42,7 @@
   before skip=12pt,after skip=12pt
 }}
 
+{code_block}
 {brand_colors_block}
 {heading_styles_block}
 {title_style_block}
