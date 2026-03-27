@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.5.0](https://github.com/neuralsignal/obsidian-export/compare/v0.4.2...v0.5.0) (2026-03-27)
+
+
+### Features
+
+* add code_fontsize config and fvextra line-wrapping for PDF code blocks ([2179f51](https://github.com/neuralsignal/obsidian-export/commit/2179f517cbdae50c7e39523a83a7236befb3dc95))
+* code_fontsize config + fvextra line-wrapping + ragged2e table hyphenation ([63ddad3](https://github.com/neuralsignal/obsidian-export/commit/63ddad3c0cfbf61f2792445d9688c83f25010950))
+* support non-SVG image formats in export pipeline ([9c92ced](https://github.com/neuralsignal/obsidian-export/commit/9c92ced6536b2fefb1a7733765bbcbdfbfdef3cc))
+* support non-SVG image formats in export pipeline ([eb9677f](https://github.com/neuralsignal/obsidian-export/commit/eb9677f1f14e10b9dfa4dd3ae533035f0a7b119d)), closes [#70](https://github.com/neuralsignal/obsidian-export/issues/70)
+
+
+### Bug Fixes
+
+* narrow except clause in stage3_image.py to specific Pillow exceptions ([#91](https://github.com/neuralsignal/obsidian-export/issues/91)) ([3770c0b](https://github.com/neuralsignal/obsidian-export/commit/3770c0b075fc77756ee1dec906a3d7af1f764cf1))
+* replace RuntimeError with MermaidRenderError in stage3_mermaid.py ([#89](https://github.com/neuralsignal/obsidian-export/issues/89)) ([1795562](https://github.com/neuralsignal/obsidian-export/commit/1795562243e81fbe9611ff058a224250ed1ae04d))
+* replace ValueError with UnsupportedFormatError in __init__.py ([#90](https://github.com/neuralsignal/obsidian-export/issues/90)) ([758d99a](https://github.com/neuralsignal/obsidian-export/commit/758d99a14ecf5b215222e6adba8653a1b2c3c755))
+
+
+### Documentation
+
+* add docstrings to re.sub callback closures in pipeline stages ([#94](https://github.com/neuralsignal/obsidian-export/issues/94)) ([9898361](https://github.com/neuralsignal/obsidian-export/commit/989836164f30e0a06986080720449e7ad33a6cd9))
+
 ## [0.4.2](https://github.com/neuralsignal/obsidian-export/compare/v0.4.1...v0.4.2) (2026-03-20)
 
 
