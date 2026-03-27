@@ -5,6 +5,7 @@ import subprocess
 from pathlib import Path
 
 from obsidian_export.config import MermaidConfig
+from obsidian_export.exceptions import MermaidRenderError
 
 _MERMAID_BLOCK_RE = re.compile(r"```mermaid\n(.*?)```", re.DOTALL)
 
@@ -50,7 +51,9 @@ def render_mermaid_blocks(body: str, config: MermaidConfig, tmpdir: Path) -> str
             subprocess.run(cmd, check=True, capture_output=True)
         except subprocess.CalledProcessError as exc:
             stderr = exc.stderr.decode(errors="replace") if exc.stderr else "(no stderr)"
-            raise RuntimeError(f"mmdc failed (exit {exc.returncode}) rendering diagram {counter}:\n{stderr}") from exc
+            raise MermaidRenderError(
+                f"mmdc failed (exit {exc.returncode}) rendering diagram {counter}:\n{stderr}"
+            ) from exc
 
         return f"![Diagram {counter}]({out_file})"
 
