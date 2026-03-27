@@ -26,6 +26,7 @@ style:
   urlcolor: "NavyBlue"
   line_spacing: 1.0
   table_fontsize: "small"
+  code_fontsize: "footnotesize"
   image_max_height_ratio: 0.40
   url_footnote_threshold: 60
   header_left: ""

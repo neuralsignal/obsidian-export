@@ -138,6 +138,63 @@ def resolve_embeds(
     return _resolve_embeds_recursive(content, ctx)
 
 
+def _resolve_image_embed(raw: str, vault_root: Path, vault_resolved: Path) -> str:
+    """Resolve an image embed to a markdown image reference."""
+    img_path = (vault_root / raw).resolve()
+    if not img_path.is_relative_to(vault_resolved):
+        raise PathTraversalError(f"Embed path escapes vault root: {raw!r} resolved to {img_path}")
+    if img_path.exists():
+        return f"![]({img_path})"
+    # Obsidian resolves by filename anywhere in vault — search subdirs
+    matches = list(vault_root.rglob(raw))
+    if matches:
+        return f"![]({matches[0]})"
+    return f"![{raw}]({vault_root / raw})"
+
+
+def _resolve_note_path(note_slug: str, vault_root: Path, current_file: Path) -> Path:
+    """Find a note file in the vault with fallback to current file's directory."""
+    note_path = vault_root / f"{note_slug}.md"
+    if note_path.exists():
+        return note_path
+    note_path = current_file.parent / f"{note_slug}.md"
+    if note_path.exists():
+        return note_path
+    raise EmbedNotFoundError(f"Embed not found: {note_slug!r}. Searched: {vault_root}, {current_file.parent}")
+
+
+def _resolve_note_embed(raw: str, ctx: EmbedContext, vault_resolved: Path) -> str:
+    """Resolve a text or section embed, with cycle detection and recursion."""
+    section_match = _SECTION_EMBED_RE.match(raw)
+    if section_match:
+        note_slug = section_match.group(1).strip()
+        heading: str | None = section_match.group(2).strip()
+    else:
+        note_slug = raw
+        heading = None
+
+    note_path = _resolve_note_path(note_slug, ctx.vault_root, ctx.current_file).resolve()
+    if not note_path.is_relative_to(vault_resolved):
+        raise PathTraversalError(f"Embed path escapes vault root: {raw!r} resolved to {note_path}")
+    if note_path in ctx.visited:
+        raise CircularEmbedError(f"Circular embed chain detected: {raw!r}")
+
+    note_text = note_path.read_text(encoding="utf-8")
+    _, note_body = parse_frontmatter(note_text)
+
+    if heading:
+        note_body = _extract_section(note_body, heading)
+
+    child_ctx = EmbedContext(
+        vault_root=ctx.vault_root,
+        current_file=note_path,
+        visited=ctx.visited | {note_path},
+        depth=ctx.depth + 1,
+        max_embed_depth=ctx.max_embed_depth,
+    )
+    return _resolve_embeds_recursive(note_body, child_ctx).strip()
+
+
 def _resolve_embeds_recursive(
     content: str,
     ctx: EmbedContext,
@@ -150,60 +207,10 @@ def _resolve_embeds_recursive(
 
     def replace_embed(m: re.Match) -> str:
         raw = m.group(1).strip()
-
-        # Image embed check
         suffix = Path(raw).suffix.lower()
         if suffix in IMAGE_EXTENSIONS:
-            img_path = (ctx.vault_root / raw).resolve()
-            if not img_path.is_relative_to(vault_resolved):
-                raise PathTraversalError(f"Embed path escapes vault root: {raw!r} resolved to {img_path}")
-            if img_path.exists():
-                return f"![]({img_path})"
-            # Obsidian resolves by filename anywhere in vault — search subdirs
-            matches = list(ctx.vault_root.rglob(raw))
-            if matches:
-                return f"![]({matches[0]})"
-            return f"![{raw}]({ctx.vault_root / raw})"
-
-        # Section embed: ![[note#Heading]]
-        section_match = _SECTION_EMBED_RE.match(raw)
-        if section_match:
-            note_slug = section_match.group(1).strip()
-            heading = section_match.group(2).strip()
-        else:
-            note_slug = raw
-            heading = None
-
-        # Resolve note path
-        note_path = ctx.vault_root / f"{note_slug}.md"
-        if not note_path.exists():
-            # Try relative to current file's directory
-            note_path = ctx.current_file.parent / f"{note_slug}.md"
-        if not note_path.exists():
-            raise EmbedNotFoundError(f"Embed not found: {raw!r}. Searched: {ctx.vault_root}, {ctx.current_file.parent}")
-
-        note_path = note_path.resolve()
-        if not note_path.is_relative_to(vault_resolved):
-            raise PathTraversalError(f"Embed path escapes vault root: {raw!r} resolved to {note_path}")
-        if note_path in ctx.visited:
-            raise CircularEmbedError(f"Circular embed chain detected: {raw!r}")
-
-        note_text = note_path.read_text(encoding="utf-8")
-        _, note_body = parse_frontmatter(note_text)
-
-        if heading:
-            note_body = _extract_section(note_body, heading)
-
-        # Recurse
-        child_ctx = EmbedContext(
-            vault_root=ctx.vault_root,
-            current_file=note_path,
-            visited=ctx.visited | {note_path},
-            depth=ctx.depth + 1,
-            max_embed_depth=ctx.max_embed_depth,
-        )
-        resolved = _resolve_embeds_recursive(note_body, child_ctx)
-        return resolved.strip()
+            return _resolve_image_embed(raw, ctx.vault_root, vault_resolved)
+        return _resolve_note_embed(raw, ctx, vault_resolved)
 
     return _EMBED_RE.sub(replace_embed, content)
 

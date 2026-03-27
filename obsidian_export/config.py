@@ -68,6 +68,7 @@ class StyleConfig:
     urlcolor: str
     line_spacing: float
     table_fontsize: str
+    code_fontsize: str
     image_max_height_ratio: float
     url_footnote_threshold: int
     header_left: str
@@ -189,6 +190,7 @@ def _build_style_config(raw: dict[str, Any], config_dir: Path | None) -> StyleCo
         urlcolor=raw["urlcolor"],
         line_spacing=float(raw["line_spacing"]),
         table_fontsize=raw["table_fontsize"],
+        code_fontsize=raw["code_fontsize"],
         image_max_height_ratio=float(raw["image_max_height_ratio"]),
         url_footnote_threshold=int(raw["url_footnote_threshold"]),
         header_left=raw["header_left"],
