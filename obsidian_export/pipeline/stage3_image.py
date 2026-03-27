@@ -78,7 +78,7 @@ def convert_images(
         try:
             with Image.open(img_path) as im:
                 im.save(out_path, format="PNG")
-        except Exception as exc:
+        except (OSError, ValueError) as exc:
             raise ImageConversionError(
                 f"Failed to convert {img_path} to PNG: {exc}. Ensure Pillow supports the {ext} format."
             ) from exc
