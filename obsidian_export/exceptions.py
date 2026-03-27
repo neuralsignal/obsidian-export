@@ -29,5 +29,9 @@ class PathTraversalError(ObsidianExportError):
     """Embed path resolves outside the vault root (path traversal attempt)."""
 
 
+class UnsupportedFormatError(ObsidianExportError):
+    """Output format is not supported (must be 'pdf' or 'docx')."""
+
+
 class MermaidRenderError(ObsidianExportError):
     """Mermaid diagram rendering via mmdc failed."""

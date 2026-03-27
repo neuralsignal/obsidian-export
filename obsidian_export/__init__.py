@@ -8,6 +8,7 @@ import tempfile
 from pathlib import Path
 
 from obsidian_export.config import ConvertConfig, StyleConfig
+from obsidian_export.exceptions import UnsupportedFormatError
 from obsidian_export.pipeline.latex_header import render_header
 from obsidian_export.pipeline.stage1_vault import (
     clean_frontmatter,
@@ -74,7 +75,7 @@ def run(
     config:        fully-populated ConvertConfig (no defaults)
     """
     if output_format not in ("pdf", "docx"):
-        raise ValueError(f"Unsupported output format: {output_format!r}. Use 'pdf' or 'docx'.")
+        raise UnsupportedFormatError(f"Unsupported output format: {output_format!r}. Use 'pdf' or 'docx'.")
 
     source = input_path.read_text(encoding="utf-8")
 
