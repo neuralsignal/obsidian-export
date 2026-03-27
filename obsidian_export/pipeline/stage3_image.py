@@ -13,7 +13,8 @@ from pathlib import Path
 
 from PIL import Image
 
-from obsidian_export.exceptions import ImageConversionError, PathTraversalError
+from obsidian_export.exceptions import ImageConversionError
+from obsidian_export.pipeline.path_guards import assert_within_root
 
 PDF_NATIVE_EXTENSIONS = frozenset({".png", ".jpg", ".jpeg", ".pdf"})
 DOCX_NATIVE_EXTENSIONS = frozenset({".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff", ".tif"})
@@ -59,10 +60,7 @@ def convert_images(
             img_path = resource_path / img_path
 
         if resource_path is not None:
-            resolved = img_path.resolve()
-            root = resource_path.resolve()
-            if not resolved.is_relative_to(root):
-                raise PathTraversalError(f"Image path escapes document root: {img_raw!r} resolved to {img_path}")
+            assert_within_root(img_path, resource_path, "Image")
 
         if not img_path.exists():
             raise ImageConversionError(f"Image file not found: {img_path}")
