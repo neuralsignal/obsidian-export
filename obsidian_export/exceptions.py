@@ -27,3 +27,7 @@ class ProfileNameError(ObsidianExportError):
 
 class PathTraversalError(ObsidianExportError):
     """Embed path resolves outside the vault root (path traversal attempt)."""
+
+
+class MermaidRenderError(ObsidianExportError):
+    """Mermaid diagram rendering via mmdc failed."""

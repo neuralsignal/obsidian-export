@@ -10,6 +10,7 @@ from unittest.mock import patch
 import pytest
 
 from obsidian_export.config import MermaidConfig
+from obsidian_export.exceptions import MermaidRenderError
 from obsidian_export.pipeline.stage3_mermaid import render_mermaid_blocks
 
 
@@ -105,7 +106,7 @@ class TestRenderMermaidBlocks:
 class TestMmdcSubprocessFailure:
     """Tests for subprocess.CalledProcessError handling in render_mermaid_blocks."""
 
-    def test_mmdc_failure_raises_runtime_error(self, tmp_path: Path) -> None:
+    def test_mmdc_failure_raises_mermaid_render_error(self, tmp_path: Path) -> None:
         mmdc = _make_fake_mmdc(tmp_path)
         config = _make_config(mmdc, 3)
         text = "```mermaid\ngraph TB\n    A --> B\n```"
@@ -115,7 +116,7 @@ class TestMmdcSubprocessFailure:
             stderr=b"Error: syntax error in diagram",
         )
         with patch("obsidian_export.pipeline.stage3_mermaid.subprocess.run", side_effect=exc):
-            with pytest.raises(RuntimeError, match=r"mmdc failed \(exit 1\)") as exc_info:
+            with pytest.raises(MermaidRenderError, match=r"mmdc failed \(exit 1\)") as exc_info:
                 render_mermaid_blocks(text, config, tmp_path)
             assert "syntax error in diagram" in str(exc_info.value)
             assert exc_info.value.__cause__ is exc
@@ -130,7 +131,7 @@ class TestMmdcSubprocessFailure:
             stderr=None,
         )
         with patch("obsidian_export.pipeline.stage3_mermaid.subprocess.run", side_effect=exc):
-            with pytest.raises(RuntimeError, match=r"mmdc failed \(exit 2\)") as exc_info:
+            with pytest.raises(MermaidRenderError, match=r"mmdc failed \(exit 2\)") as exc_info:
                 render_mermaid_blocks(text, config, tmp_path)
             assert "(no stderr)" in str(exc_info.value)
             assert exc_info.value.__cause__ is exc
