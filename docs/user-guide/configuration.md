@@ -65,6 +65,7 @@ style:
   urlcolor: "NavyBlue"               # URL color
   line_spacing: 1.0                  # Line spacing multiplier
   table_fontsize: "small"            # Font size in tables
+  code_fontsize: "small"             # Font size in code blocks
   image_max_height_ratio: 0.40       # Max image height as fraction of page
   url_footnote_threshold: 60         # URL length threshold for footnoting
   header_left: ""                    # Left header (supports {doc_title}, {logo_path})

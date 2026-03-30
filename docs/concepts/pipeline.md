@@ -8,7 +8,8 @@ graph LR
 Vault"] --> S2["Stage 2
 Preprocess"] --> S3["Stage 3
 Mermaid"] --> S3b["Stage 3b
-SVG"] --> S4["Stage 4
+SVG"] --> S3c["Stage 3c
+Image"] --> S4["Stage 4
 Pandoc"]
 ```
 
@@ -46,13 +47,25 @@ Renders `` ```mermaid `` code blocks to PNG images using mermaid-cli (mmdc):
 
 ## Stage 3b: SVG Conversion
 
-Converts SVG image references to PDF format for LaTeX compatibility (PDF output only):
+Converts SVG image references for format compatibility:
 
 - Finds `![](*.svg)` image references
-- Converts each SVG to PDF via `rsvg-convert`
-- Replaces SVG references with PDF references
+- PDF output: converts each SVG to PDF via `rsvg-convert`
+- DOCX output: converts each SVG to PNG via `rsvg-convert`
+- Replaces SVG references with the converted file references
 
 **Module**: [`obsidian_export.pipeline.stage3_svg`](../reference/pipeline/stage3_svg.md)
+
+## Stage 3c: Image Conversion
+
+Converts image formats not natively supported by the target renderer to PNG using Pillow:
+
+- PDF (tectonic/LaTeX) natively supports: PNG, JPG/JPEG, PDF
+- DOCX (pandoc) natively supports: PNG, JPG/JPEG, GIF, BMP, TIFF
+- Any other format (e.g., WebP, AVIF) is converted to PNG in the temporary directory
+- SVG images are skipped (handled by Stage 3b)
+
+**Module**: [`obsidian_export.pipeline.stage3_image`](../reference/pipeline/stage3_image.md)
 
 ## Stage 4: Pandoc Conversion
 

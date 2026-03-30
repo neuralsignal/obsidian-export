@@ -4,4 +4,3 @@
     options:
       members:
         - run
-        - _resolve_style_dir
