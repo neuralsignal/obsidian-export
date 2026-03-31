@@ -85,6 +85,7 @@ nav:
       - Stage 2 - Preprocess: reference/pipeline/stage2_preprocess.md
       - Stage 3 - Mermaid: reference/pipeline/stage3_mermaid.md
       - Stage 3b - SVG: reference/pipeline/stage3_svg.md
+      - Stage 3c - Image: reference/pipeline/stage3_image.md
       - Stage 4 - Pandoc: reference/pipeline/stage4_pandoc.md
       - LaTeX Header: reference/pipeline/latex_header.md
     - Profiles: reference/profiles.md
