@@ -1,8 +1,17 @@
 """Generate rendered LaTeX header from style config and template."""
 
+import re
 from pathlib import Path
 
 from obsidian_export.config import HeadingStyle, StyleConfig, TitleStyle
+from obsidian_export.exceptions import UnsafeLatexError
+
+_DANGEROUS_LATEX_RE = re.compile(
+    r"\\(?:input|include|write\d*|immediate|openin|openout|read|closein|closeout"
+    r"|catcode|def|edef|gdef|xdef|let|csname|newwrite|ShellEscape|directlua"
+    r"|luaexec|luadirect)(?![a-zA-Z])",
+    re.IGNORECASE,
+)
 
 
 def render_header(style: StyleConfig, template_path: Path, title: str) -> str:
@@ -98,12 +107,27 @@ def _substitute_placeholders(value: str, title: str, logo_path: str) -> str:
     return value.replace("{doc_title}", short_title).replace("{logo_path}", logo_path)
 
 
+def _validate_latex_value(latex: str, char: str) -> None:
+    """Reject latex values containing dangerous macros.
+
+    Raises UnsafeLatexError if the value contains macros that could read files,
+    execute shell commands, or redefine TeX internals.
+    """
+    if _DANGEROUS_LATEX_RE.search(latex):
+        msg = (
+            f"unicode_chars config for '{char}' contains a dangerous LaTeX macro: "
+            f"'{latex}'. Remove or replace it with a safe alternative."
+        )
+        raise UnsafeLatexError(msg)
+
+
 def _build_unicode_char_block(unicode_chars: tuple[tuple[str, str], ...]) -> str:
     """Generate \\newunicodechar lines from config tuples."""
     if not unicode_chars:
         return ""
     lines = []
     for char, latex in unicode_chars:
+        _validate_latex_value(latex, char)
         lines.append(f"\\newunicodechar{{{char}}}{{{latex}}}")
     return "\n".join(lines)
 

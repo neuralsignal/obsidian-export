@@ -35,3 +35,7 @@ class UnsupportedFormatError(ObsidianExportError):
 
 class MermaidRenderError(ObsidianExportError):
     """Mermaid diagram rendering via mmdc failed."""
+
+
+class UnsafeLatexError(ObsidianExportError):
+    """LaTeX value from config contains a dangerous macro."""
