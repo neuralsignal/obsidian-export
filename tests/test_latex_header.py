@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from obsidian_export.config import CalloutColors, HeadingStyle, StyleConfig, TitleStyle, default_config
+from obsidian_export.exceptions import UnsafeLatexError
 from obsidian_export.pipeline.latex_header import (
     _build_brand_colors_block,
     _build_code_block,
@@ -18,6 +19,7 @@ from obsidian_export.pipeline.latex_header import (
     _escape_latex,
     _substitute_placeholders,
     _truncate_title,
+    _validate_latex_value,
     render_header,
 )
 
@@ -58,6 +60,90 @@ class TestBuildUnicodeCharBlock:
         chars = (("└", "└"),)
         result = _build_unicode_char_block(chars)
         assert result == "\\newunicodechar{└}{└}"
+
+    def test_rejects_input_macro(self) -> None:
+        with pytest.raises(UnsafeLatexError, match="dangerous LaTeX macro"):
+            _build_unicode_char_block((("⚠", "\\input{/etc/passwd}"),))
+
+    def test_rejects_write18(self) -> None:
+        with pytest.raises(UnsafeLatexError, match="dangerous LaTeX macro"):
+            _build_unicode_char_block((("⚠", "\\write18{rm -rf /}"),))
+
+    def test_rejects_include(self) -> None:
+        with pytest.raises(UnsafeLatexError, match="dangerous LaTeX macro"):
+            _build_unicode_char_block((("⚠", "\\include{secrets}"),))
+
+    def test_rejects_def(self) -> None:
+        with pytest.raises(UnsafeLatexError, match="dangerous LaTeX macro"):
+            _build_unicode_char_block((("⚠", "\\def\\foo{bar}"),))
+
+    def test_rejects_catcode(self) -> None:
+        with pytest.raises(UnsafeLatexError, match="dangerous LaTeX macro"):
+            _build_unicode_char_block((("⚠", "\\catcode`\\@=11"),))
+
+    def test_rejects_directlua(self) -> None:
+        with pytest.raises(UnsafeLatexError, match="dangerous LaTeX macro"):
+            _build_unicode_char_block((("⚠", "\\directlua{os.execute('id')}"),))
+
+    def test_rejects_case_insensitive(self) -> None:
+        with pytest.raises(UnsafeLatexError, match="dangerous LaTeX macro"):
+            _build_unicode_char_block((("⚠", "\\INPUT{/etc/passwd}"),))
+
+    def test_allows_safe_macros(self) -> None:
+        safe_chars = (
+            ("⚠", "\\ensuremath{\\triangle}"),
+            ("✅", "\\ensuremath{\\checkmark}"),
+            ("→", "\\textrightarrow{}"),
+        )
+        result = _build_unicode_char_block(safe_chars)
+        assert "\\newunicodechar{⚠}" in result
+        assert "\\newunicodechar{✅}" in result
+        assert "\\newunicodechar{→}" in result
+
+
+class TestValidateLatexValue:
+    @pytest.mark.parametrize(
+        "latex",
+        [
+            "\\input{file}",
+            "\\include{file}",
+            "\\write18{cmd}",
+            "\\immediate\\write18{cmd}",
+            "\\openin1=file",
+            "\\openout1=file",
+            "\\read1 to \\x",
+            "\\closein1",
+            "\\closeout1",
+            "\\catcode`\\@=11",
+            "\\def\\x{y}",
+            "\\edef\\x{y}",
+            "\\gdef\\x{y}",
+            "\\xdef\\x{y}",
+            "\\let\\x=\\y",
+            "\\csname evil\\endcsname",
+            "\\newwrite\\myfile",
+            "\\directlua{os.execute('id')}",
+            "\\luaexec{os.execute('id')}",
+            "\\luadirect{os.execute('id')}",
+        ],
+    )
+    def test_rejects_dangerous_macros(self, latex: str) -> None:
+        with pytest.raises(UnsafeLatexError):
+            _validate_latex_value(latex, "⚠")
+
+    @pytest.mark.parametrize(
+        "latex",
+        [
+            "\\ensuremath{\\triangle}",
+            "\\textbf{bold}",
+            "\\textrightarrow{}",
+            "\\ensuremath{\\checkmark}",
+            "└",
+            "\\ding{52}",
+        ],
+    )
+    def test_allows_safe_macros(self, latex: str) -> None:
+        _validate_latex_value(latex, "⚠")
 
 
 class TestBuildFontBlock:
