@@ -39,3 +39,7 @@ class MermaidRenderError(ObsidianExportError):
 
 class ConfigValueError(ObsidianExportError):
     """A config value failed validation (e.g. unsafe pandoc format or illegal characters)."""
+
+
+class UnsafeLatexError(ObsidianExportError):
+    """LaTeX value from config contains a dangerous macro."""

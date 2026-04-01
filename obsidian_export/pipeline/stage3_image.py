@@ -59,8 +59,19 @@ def convert_images(
         img_path = Path(img_raw)
         ext = img_path.suffix.lower()
 
-        # Skip SVGs (handled by stage3_svg) and natively supported formats
-        if ext == ".svg" or not _needs_conversion(ext, native_extensions):
+        # Skip SVGs — handled by stage3_svg
+        if ext == ".svg":
+            return m.group(0)
+
+        # Natively supported formats don't need Pillow conversion, but their
+        # relative paths must still be made absolute so that tectonic (which
+        # runs in a temp directory) can locate them.
+        if not _needs_conversion(ext, native_extensions):
+            if not img_path.is_absolute() and resource_path is not None:
+                abs_path = resource_path / img_path
+                if resource_path is not None:
+                    assert_within_root(abs_path, resource_path, "Image")
+                return f"![{alt_text}]({abs_path})"
             return m.group(0)
 
         if not img_path.is_absolute() and resource_path is not None:
