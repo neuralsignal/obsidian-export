@@ -1,166 +1,22 @@
-"""Configuration dataclasses for obsidian-export pipeline."""
+"""YAML loading, merging, parsing, and config building."""
 
-import re
-from dataclasses import dataclass
 from importlib import resources
 from pathlib import Path
 from typing import Any
 
 import yaml
 
-from obsidian_export.exceptions import ConfigValueError
-
-
-@dataclass(frozen=True)
-class MermaidConfig:
-    mmdc_bin: Path
-    scale: int
-    puppeteer_config: Path | None = None
-
-
-@dataclass(frozen=True)
-class ObsidianConfig:
-    wikilink_strategy: str
-    url_strategy: str
-    url_length_threshold: int
-    max_embed_depth: int
-
-
-@dataclass(frozen=True)
-class PandocConfig:
-    from_format: str
-
-
-@dataclass(frozen=True)
-class CalloutColors:
-    note: tuple[int, int, int]
-    tip: tuple[int, int, int]
-    warning: tuple[int, int, int]
-    danger: tuple[int, int, int]
-
-
-@dataclass(frozen=True)
-class HeadingStyle:
-    level: str
-    size: str
-    bold: bool
-    sans: bool
-    color: str
-    uppercase: bool
-
-
-@dataclass(frozen=True)
-class TitleStyle:
-    size: str
-    bold: bool
-    sans: bool
-    color: str
-    date_visible: bool
-    vskip_after: str
-
-
-@dataclass(frozen=True)
-class StyleConfig:
-    name: str
-    geometry: str
-    fontsize: str
-    mainfont: str
-    sansfont: str
-    monofont: str
-    linkcolor: str
-    urlcolor: str
-    line_spacing: float
-    table_fontsize: str
-    code_fontsize: str
-    image_max_height_ratio: float
-    url_footnote_threshold: int
-    header_left: str
-    header_right: str
-    footer_left: str
-    footer_center: str
-    footer_right: str
-    callout_colors: CalloutColors
-    unicode_chars: tuple[tuple[str, str], ...]
-    logo: str
-    style_dir: str
-    brand_colors: tuple[tuple[str, int, int, int], ...]
-    heading_styles: tuple[HeadingStyle, ...]
-    title_style: TitleStyle | None
-
-
-@dataclass(frozen=True)
-class ConvertConfig:
-    mermaid: MermaidConfig
-    obsidian: ObsidianConfig
-    pandoc: PandocConfig
-    style: StyleConfig
-
-
-_SAFE_PANDOC_FORMATS: frozenset[str] = frozenset(
-    {
-        "commonmark",
-        "commonmark_x",
-        "gfm",
-        "markdown",
-        "markdown_mmd",
-        "markdown_phpextra",
-        "markdown_strict",
-    }
+from obsidian_export.config.models import (
+    CalloutColors,
+    ConvertConfig,
+    HeadingStyle,
+    MermaidConfig,
+    ObsidianConfig,
+    PandocConfig,
+    StyleConfig,
+    TitleStyle,
 )
-
-_DANGEROUS_EXTENSIONS: frozenset[str] = frozenset(
-    {
-        "raw_html",
-        "raw_attribute",
-    }
-)
-
-_PANDOC_EXTENSION_RE: re.Pattern[str] = re.compile(r"^[a-z][a-z0-9_]*$")
-
-_PANDOC_VARIABLE_RE: re.Pattern[str] = re.compile(r"^[a-zA-Z0-9,=._\- ]+$")
-
-
-def _validate_from_format(value: str) -> None:
-    """Validate pandoc from_format against safe base formats and extensions.
-
-    Raises ConfigValueError if the base format is not allowlisted,
-    any extension name is malformed, or a dangerous extension is enabled.
-    """
-    parts = re.split(r"(?=[+-])", value, maxsplit=1)
-    base_format = parts[0]
-    if base_format not in _SAFE_PANDOC_FORMATS:
-        raise ConfigValueError(
-            f"Unsupported pandoc base format: {base_format!r}. Allowed: {sorted(_SAFE_PANDOC_FORMATS)}"
-        )
-
-    if len(parts) < 2:
-        return
-
-    ext_string = parts[1]
-    for match in re.finditer(r"([+-])([^+-]+)", ext_string):
-        sign, ext_name = match.group(1), match.group(2)
-        if not _PANDOC_EXTENSION_RE.match(ext_name):
-            raise ConfigValueError(f"Malformed pandoc extension name: {ext_name!r} in from_format {value!r}")
-        if sign == "+" and ext_name in _DANGEROUS_EXTENSIONS:
-            raise ConfigValueError(
-                f"Dangerous pandoc extension enabled: +{ext_name} in from_format {value!r}. "
-                f"Blocked extensions: {sorted(_DANGEROUS_EXTENSIONS)}"
-            )
-
-
-def _validate_pandoc_variable(name: str, value: str) -> None:
-    """Validate a string that will be passed as a pandoc --variable value.
-
-    Allows alphanumeric characters and limited punctuation (commas, equals,
-    dots, hyphens, underscores, spaces). Raises ConfigValueError on mismatch.
-    """
-    if not value:
-        return
-    if not _PANDOC_VARIABLE_RE.match(value):
-        raise ConfigValueError(
-            f"Invalid characters in style config {name!r}: {value!r}. "
-            f"Only alphanumeric characters and ,=._- are allowed."
-        )
+from obsidian_export.config.validators import _validate_from_format, _validate_pandoc_variable
 
 
 def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
