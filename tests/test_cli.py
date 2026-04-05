@@ -125,7 +125,6 @@ def test_convert_without_profile(tmp_path: Path) -> None:
         mock_run.assert_called_once_with(Path(str(input_file)), Path(str(output_file)), "pdf", mock_config)
 
 
-
 def test_convert_missing_input() -> None:
     runner = CliRunner()
     result = runner.invoke(

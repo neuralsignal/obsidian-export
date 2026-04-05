@@ -130,7 +130,6 @@ class TestConvertToDocx:
         assert inv.output_path.exists()
         assert inv.output_path.stat().st_size > 0
 
-
     def test_missing_filter_raises(self, tmp_path: Path) -> None:
         inv = _make_invocation(tmp_path, SAMPLE_TEXT, "Test", "output.docx", tmp_path / "nonexistent")
         with pytest.raises(FileNotFoundError, match="Lua filter not found"):
