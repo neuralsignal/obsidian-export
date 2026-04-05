@@ -69,8 +69,7 @@ def convert_images(
         if not _needs_conversion(ext, native_extensions):
             if not img_path.is_absolute() and resource_path is not None:
                 abs_path = resource_path / img_path
-                if resource_path is not None:
-                    assert_within_root(abs_path, resource_path, "Image")
+                assert_within_root(abs_path, resource_path, "Image")
                 return f"![{alt_text}]({abs_path})"
             return m.group(0)
 

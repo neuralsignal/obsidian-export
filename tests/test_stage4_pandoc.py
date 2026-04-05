@@ -115,6 +115,22 @@ class TestConvertToDocx:
         header = inv.output_path.read_bytes()[:2]
         assert header == b"PK"
 
+    def test_reference_doc_passed_to_pandoc(self, tmp_path: Path) -> None:
+        inv = _make_invocation(tmp_path, SAMPLE_TEXT, "Test", "output.docx", FILTERS_DIR)
+        ref_doc = tmp_path / "custom.docx"
+        # Create a minimal valid DOCX (zip) so pandoc accepts it
+        import zipfile
+
+        with zipfile.ZipFile(ref_doc, "w") as zf:
+            zf.writestr(
+                "[Content_Types].xml",
+                '<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"></Types>',
+            )
+        convert_to_docx(inv, reference_doc=ref_doc)
+        assert inv.output_path.exists()
+        assert inv.output_path.stat().st_size > 0
+
+
     def test_missing_filter_raises(self, tmp_path: Path) -> None:
         inv = _make_invocation(tmp_path, SAMPLE_TEXT, "Test", "output.docx", tmp_path / "nonexistent")
         with pytest.raises(FileNotFoundError, match="Lua filter not found"):
