@@ -139,7 +139,7 @@ def _build_style_config(raw: dict[str, Any], config_dir: Path | None) -> StyleCo
     )
 
 
-def _build_config(raw: dict, config_dir: Path | None) -> ConvertConfig:
+def _build_config(raw: dict[str, Any], config_dir: Path | None) -> ConvertConfig:
     """Build ConvertConfig from a raw dict. Resolve relative paths if config_dir given."""
     if config_dir is not None and not config_dir.is_absolute():
         config_dir = config_dir.resolve()
