@@ -5,6 +5,7 @@
 
 ### Bug Fixes
 
+* parameterize dict type hint in _build_config ([c2d25f1](https://github.com/neuralsignal/obsidian-export/commit/c2d25f1a027ea8069083029eea89533a80d03223)), closes [#122](https://github.com/neuralsignal/obsidian-export/issues/122)
 * reformat test_cli.py and test_stage4_pandoc.py to pass ruff format check ([8646843](https://github.com/neuralsignal/obsidian-export/commit/8646843254e9e62bbacc77b16588fec9017d5efd))
 * resolve merge conflicts with origin/main ([d362755](https://github.com/neuralsignal/obsidian-export/commit/d362755af08ab487e91cbcab9b038a10e23477ac))
 * validate config strings passed as pandoc CLI arguments ([#106](https://github.com/neuralsignal/obsidian-export/issues/106)) ([13e0311](https://github.com/neuralsignal/obsidian-export/commit/13e0311e31f4e7d2cfa8b0a7b2e9724741bafe4d))
