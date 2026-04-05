@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.5.1](https://github.com/neuralsignal/obsidian-export/compare/v0.5.0...v0.5.1) (2026-04-05)
+
+
+### Bug Fixes
+
+* reformat test_cli.py and test_stage4_pandoc.py to pass ruff format check ([8646843](https://github.com/neuralsignal/obsidian-export/commit/8646843254e9e62bbacc77b16588fec9017d5efd))
+* resolve merge conflicts with origin/main ([d362755](https://github.com/neuralsignal/obsidian-export/commit/d362755af08ab487e91cbcab9b038a10e23477ac))
+* validate config strings passed as pandoc CLI arguments ([#106](https://github.com/neuralsignal/obsidian-export/issues/106)) ([13e0311](https://github.com/neuralsignal/obsidian-export/commit/13e0311e31f4e7d2cfa8b0a7b2e9724741bafe4d))
+* validate unicode_chars LaTeX values against dangerous macros ([#105](https://github.com/neuralsignal/obsidian-export/issues/105)) ([23801c0](https://github.com/neuralsignal/obsidian-export/commit/23801c0dca6deb42097566ee5d0b48fc7c1d406c))
+
+
+### Documentation
+
+* sync documentation with codebase ([94ae2ec](https://github.com/neuralsignal/obsidian-export/commit/94ae2eca0ba84d4f201fca34dda6eab9252d9339))
+* sync documentation with codebase changes ([56dafad](https://github.com/neuralsignal/obsidian-export/commit/56dafadc00244144867ec47000719efbd41cfae2))
+
 ## [0.5.0](https://github.com/neuralsignal/obsidian-export/compare/v0.4.2...v0.5.0) (2026-03-27)
 
 

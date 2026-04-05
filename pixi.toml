@@ -2,7 +2,7 @@
 channels = ["conda-forge"]
 name = "obsidian-export"
 platforms = ["linux-64", "osx-arm64"]
-version = "0.5.0" # x-release-please-version
+version = "0.5.1" # x-release-please-version
 
 [dependencies]
 python = ">=3.12,<3.15"
