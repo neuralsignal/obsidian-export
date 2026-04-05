@@ -199,6 +199,20 @@ class TestConvertImages:
             assert (tmpdir / "img_1.png").exists()
             assert (tmpdir / "img_2.png").exists()
 
+    def test_native_relative_path_absolutized_with_resource_path(self) -> None:
+        with tempfile.TemporaryDirectory() as workdir:
+            workdir = Path(workdir)
+            img = workdir / "photo.png"
+            _create_test_image(img, "PNG")
+            tmpdir = workdir / "out"
+            tmpdir.mkdir()
+
+            text = "![photo](photo.png)\n"
+            result = convert_images_for_pdf(text, tmpdir, resource_path=workdir)
+
+            assert str(workdir / "photo.png") in result
+            assert "photo.png)" not in result or str(workdir) in result
+
     def test_relative_path_resolved_against_resource_path(self) -> None:
         with tempfile.TemporaryDirectory() as workdir:
             workdir = Path(workdir)
@@ -214,6 +228,19 @@ class TestConvertImages:
 
 
 # ── Path traversal ───────────────────────────────────────────────────────────
+
+
+class TestNativeRelativePath:
+    @given(ext=st.sampled_from([".png", ".jpg", ".jpeg"]))
+    def test_native_relative_path_becomes_absolute(self, ext: str) -> None:
+        with tempfile.TemporaryDirectory() as workdir:
+            workdir_path = Path(workdir)
+            img = workdir_path / f"image{ext}"
+            _create_test_image(img, "PNG")
+            with tempfile.TemporaryDirectory() as tmpdir:
+                text = f"![alt](image{ext})\n"
+                result = convert_images_for_pdf(text, Path(tmpdir), resource_path=workdir_path)
+                assert str(workdir_path / f"image{ext}") in result
 
 
 class TestPathTraversal:

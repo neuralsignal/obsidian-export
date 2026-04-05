@@ -97,6 +97,34 @@ def test_profile_show(tmp_path: Path) -> None:
         assert "custom" in result.output
 
 
+def test_convert_without_profile(tmp_path: Path) -> None:
+    input_file = tmp_path / "note.md"
+    input_file.write_text("# Hello", encoding="utf-8")
+    output_file = tmp_path / "out.pdf"
+    with (
+        patch("obsidian_export.cli.default_config") as mock_default,
+        patch("obsidian_export.cli.run") as mock_run,
+    ):
+        mock_config = MagicMock()
+        mock_default.return_value = mock_config
+        runner = CliRunner()
+        result = runner.invoke(
+            main,
+            [
+                "convert",
+                "--input",
+                str(input_file),
+                "--format",
+                "pdf",
+                "--output",
+                str(output_file),
+            ],
+        )
+        assert result.exit_code == 0, result.output
+        mock_default.assert_called_once()
+        mock_run.assert_called_once_with(Path(str(input_file)), Path(str(output_file)), "pdf", mock_config)
+
+
 def test_convert_missing_input() -> None:
     runner = CliRunner()
     result = runner.invoke(
