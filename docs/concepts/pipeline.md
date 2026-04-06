@@ -28,10 +28,11 @@ Handles Obsidian-specific vault operations:
 
 Text-level transformations on the Markdown body:
 
+- **Line ending normalization** — normalizes CRLF to LF and strips trailing whitespace per line
+- **Variation selector stripping** — removes Unicode U+FE0F (emoji variation selector) that TeX cannot render
 - **Dollar sign escaping** — `$25/user` renders as literal text, not LaTeX math
 - **Callout conversion** — `> [!note]` blocks become colored boxes (PDF) or blockquotes (DOCX)
 - **URL handling** — configurable strategies: keep, footnote long URLs, footnote all, or strip
-- **Unicode mapping** — maps special characters to LaTeX equivalents
 
 **Module**: [`obsidian_export.pipeline.stage2_preprocess`](../reference/pipeline/stage2_preprocess.md)
 
