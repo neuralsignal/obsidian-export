@@ -232,6 +232,27 @@ class TestBuildHeaderFooterBlock:
         result = _build_header_footer_block("L", "", "", "", "")
         assert "\\renewcommand{\\headrulewidth}{0pt}" in result
 
+    @pytest.mark.parametrize(
+        ("field_idx", "field_name"),
+        [
+            (0, "header_left"),
+            (1, "header_right"),
+            (2, "footer_left"),
+            (3, "footer_center"),
+            (4, "footer_right"),
+        ],
+    )
+    def test_rejects_dangerous_macro_in_each_field(self, field_idx: int, field_name: str) -> None:
+        args = ["", "", "", "", ""]
+        args[field_idx] = "\\input{/etc/passwd}"
+        with pytest.raises(UnsafeLatexError, match=f"Config field '{field_name}'"):
+            _build_header_footer_block(*args)
+
+    def test_allows_safe_header_footer_values(self) -> None:
+        result = _build_header_footer_block("\\sffamily Title", "2026", "\\textbf{Footer}", "\\thepage", "v1.0")
+        assert "\\fancyhead[L]{\\sffamily Title}" in result
+        assert "\\fancyfoot[C]{\\thepage}" in result
+
 
 class TestBuildBrandColorsBlock:
     def test_empty_returns_empty(self) -> None:
