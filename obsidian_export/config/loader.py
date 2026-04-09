@@ -152,6 +152,8 @@ def _build_config(raw: dict[str, Any], config_dir: Path | None) -> ConvertConfig
     _validate_pandoc_variable("fontsize", style.fontsize)
     _validate_pandoc_variable("linkcolor", style.linkcolor)
     _validate_pandoc_variable("urlcolor", style.urlcolor)
+    _validate_pandoc_variable("code_fontsize", style.code_fontsize)
+    _validate_pandoc_variable("table_fontsize", style.table_fontsize)
 
     return ConvertConfig(
         mermaid=_build_mermaid_config(raw["mermaid"], config_dir),

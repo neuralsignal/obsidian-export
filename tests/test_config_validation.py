@@ -124,3 +124,27 @@ class TestValidatePandocVariableIntegration:
         cfg = write_config(tmp_path, partial)
         with pytest.raises(ConfigValueError, match="geometry"):
             load_config(cfg)
+
+    def test_load_config_rejects_malicious_code_fontsize(self, tmp_path: Path) -> None:
+        partial = {"style": {"code_fontsize": r"small}\input{/etc/passwd}\ignorespaces{"}}
+        cfg = write_config(tmp_path, partial)
+        with pytest.raises(ConfigValueError, match="code_fontsize"):
+            load_config(cfg)
+
+    def test_load_config_rejects_malicious_table_fontsize(self, tmp_path: Path) -> None:
+        partial = {"style": {"table_fontsize": r"small}\input{/etc/passwd}\ignorespaces{"}}
+        cfg = write_config(tmp_path, partial)
+        with pytest.raises(ConfigValueError, match="table_fontsize"):
+            load_config(cfg)
+
+    def test_load_config_accepts_valid_code_fontsize(self, tmp_path: Path) -> None:
+        partial = {"style": {"code_fontsize": "footnotesize"}}
+        cfg = write_config(tmp_path, partial)
+        result = load_config(cfg)
+        assert result.style.code_fontsize == "footnotesize"
+
+    def test_load_config_accepts_valid_table_fontsize(self, tmp_path: Path) -> None:
+        partial = {"style": {"table_fontsize": "small"}}
+        cfg = write_config(tmp_path, partial)
+        result = load_config(cfg)
+        assert result.style.table_fontsize == "small"
