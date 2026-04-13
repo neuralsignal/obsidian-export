@@ -13,7 +13,7 @@ obsidian:
   max_embed_depth: 10
 
 pandoc:
-  from_format: "gfm-tex_math_dollars+footnotes"
+  from_format: "gfm-tex_math_dollars+footnotes+fenced_divs+bracketed_spans"
 
 style:
   name: "default"

@@ -12,9 +12,34 @@ function Meta(meta)
   end
 end
 
+-- Saturated text colors for inline bracketed spans [text]{.class}
+local span_colors = {
+  note      = "textnote",
+  info      = "textnote",
+  tip       = "texttip",
+  success   = "texttip",
+  warning   = "textwarn",
+  caution   = "textwarn",
+  danger    = "textdanger",
+  important = "textdanger",
+  error     = "textdanger",
+}
+
+local function colorize_span(el)
+  for class, color in pairs(span_colors) do
+    if el.classes:includes(class) then
+      local content = pandoc.utils.stringify(el.content)
+      return pandoc.RawInline("latex",
+        string.format("\\textcolor{%s}{\\textbf{%s}}", color, content))
+    end
+  end
+  return el
+end
+
 local function cell_to_latex(blocks)
   if #blocks == 0 then return "" end
-  local doc = pandoc.Pandoc(blocks)
+  -- Resolve colored spans before converting to LaTeX
+  local doc = pandoc.Pandoc(blocks):walk({Span = colorize_span})
   local result = pandoc.write(doc, "latex")
   -- Strip document boilerplate, keep body content only
   result = result:match("\\begin{document}%s*(.-)%s*\\end{document}") or result

@@ -26,20 +26,27 @@
 \usepackage{{amssymb}}
 {unicode_char_block}
 
-% Callout boxes
-\usepackage[most]{{tcolorbox}}
+% Callout boxes (pure LaTeX, no tcolorbox dependency)
 \definecolor{{noteblue}}{{RGB}}{{{note_r},{note_g},{note_b}}}
 \definecolor{{tipgreen}}{{RGB}}{{{tip_r},{tip_g},{tip_b}}}
 \definecolor{{warnyellow}}{{RGB}}{{{warn_r},{warn_g},{warn_b}}}
 \definecolor{{dangerred}}{{RGB}}{{{danger_r},{danger_g},{danger_b}}}
-\newtcolorbox{{calloutbox}}[2]{{
-  colback=#1!30,
-  colframe=#1!80!black,
-  fonttitle=\bfseries,
-  title=#2,
-  breakable,
-  left=6pt,right=6pt,top=4pt,bottom=4pt,
-  before skip=12pt,after skip=12pt
+
+% Saturated text colors for inline owner-type markers
+\definecolor{{textdanger}}{{RGB}}{{190,50,50}}
+\definecolor{{texttip}}{{RGB}}{{30,130,76}}
+\definecolor{{textnote}}{{RGB}}{{40,90,170}}
+\definecolor{{textwarn}}{{RGB}}{{200,130,0}}
+
+% calloutbox environment: #1 = color name, #2 = title
+\newenvironment{{calloutbox}}[2]{{%
+  \par\medskip\noindent
+  \begin{{minipage}}{{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}}%
+  \colorbox{{#1!15}}{{\parbox{{\dimexpr\linewidth-2\fboxsep\relax}}{{\textbf{{#2}}}}}}%
+  \par\smallskip
+}}{{%
+  \end{{minipage}}%
+  \par\medskip
 }}
 
 {code_block}
