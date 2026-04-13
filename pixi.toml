@@ -12,6 +12,7 @@ nodejs = ">=22,<24"
 librsvg = ">=2.58,<3"
 python-build = ">=1.4.0,<2"
 hatchling = ">=1.28.0,<2"
+pip = ">=26.0,<27"
 
 [pypi-dependencies]
 obsidian-export = {path = ".", editable = true}
