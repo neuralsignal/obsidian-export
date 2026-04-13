@@ -6,6 +6,20 @@
 
 * bump Pillow pin to `>=12.1.1,<13` to fix CVE-2026-25990 (PSD out-of-bounds write); previous pin `>=10.0,<12` blocked the fix ([#141](https://github.com/neuralsignal/obsidian-export/issues/141))
 
+## [0.5.2](https://github.com/neuralsignal/obsidian-export/compare/v0.5.1...v0.5.2) (2026-04-13)
+
+
+### Bug Fixes
+
+* bump Pillow to &gt;=12.1.1,&lt;13 to address CVE-2026-25990 ([#141](https://github.com/neuralsignal/obsidian-export/issues/141)) ([eb1b8d4](https://github.com/neuralsignal/obsidian-export/commit/eb1b8d4d37472b0bb7141ce35f25d46db3220b1e))
+* validate code_fontsize and table_fontsize before LaTeX insertion ([#134](https://github.com/neuralsignal/obsidian-export/issues/134)) ([6ad9396](https://github.com/neuralsignal/obsidian-export/commit/6ad93967367cee0d87718731cef0d66a67e107df))
+* validate header/footer config strings against dangerous LaTeX macros ([#133](https://github.com/neuralsignal/obsidian-export/issues/133)) ([a6bf828](https://github.com/neuralsignal/obsidian-export/commit/a6bf8289f02c096ac1d36a339a4eb726f5ff3692))
+
+
+### Documentation
+
+* sync documentation with codebase changes ([7c2eecc](https://github.com/neuralsignal/obsidian-export/commit/7c2eecc4e149341d050938d6a2525b2bb7df3692))
+
 ## [0.5.1](https://github.com/neuralsignal/obsidian-export/compare/v0.5.0...v0.5.1) (2026-04-05)
 
 
