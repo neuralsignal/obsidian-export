@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Security
+
+* bump Pillow pin to `>=12.1.1,<13` to fix CVE-2026-25990 (PSD out-of-bounds write); previous pin `>=10.0,<12` blocked the fix ([#141](https://github.com/neuralsignal/obsidian-export/issues/141))
+
 ## [0.5.1](https://github.com/neuralsignal/obsidian-export/compare/v0.5.0...v0.5.1) (2026-04-05)
 
 
