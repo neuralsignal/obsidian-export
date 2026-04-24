@@ -8,7 +8,7 @@ from pathlib import Path
 class MermaidConfig:
     mmdc_bin: Path
     scale: int
-    puppeteer_config: Path | None = None
+    puppeteer_config: Path | None
 
 
 @dataclass(frozen=True)
