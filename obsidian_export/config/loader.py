@@ -158,7 +158,6 @@ def _build_config(raw: dict[str, Any], config_dir: Path | None) -> ConvertConfig
     return ConvertConfig(
         mermaid=_build_mermaid_config(raw["mermaid"], config_dir),
         obsidian=ObsidianConfig(
-            wikilink_strategy=raw["obsidian"]["wikilink_strategy"],
             url_strategy=raw["obsidian"]["url_strategy"],
             url_length_threshold=raw["obsidian"]["url_length_threshold"],
             max_embed_depth=int(raw["obsidian"]["max_embed_depth"]),
