@@ -29,6 +29,7 @@ from obsidian_export.config.models import (
 from obsidian_export.config.validators import (
     _validate_from_format,
     _validate_pandoc_variable,
+    _validate_url_strategy,
 )
 
 __all__ = [
@@ -50,6 +51,7 @@ __all__ = [
     "_resolve_path",
     "_validate_from_format",
     "_validate_pandoc_variable",
+    "_validate_url_strategy",
     "default_config",
     "load_config",
 ]

@@ -1,4 +1,4 @@
-"""Tests for config validation: _validate_from_format, _validate_pandoc_variable."""
+"""Tests for config validation: _validate_from_format, _validate_pandoc_variable, _validate_url_strategy."""
 
 from pathlib import Path
 
@@ -10,6 +10,7 @@ from hypothesis import strategies as st
 from obsidian_export.config import (
     _validate_from_format,
     _validate_pandoc_variable,
+    _validate_url_strategy,
     load_config,
 )
 from obsidian_export.exceptions import ConfigValueError
@@ -148,3 +149,41 @@ class TestValidatePandocVariableIntegration:
         cfg = write_config(tmp_path, partial)
         result = load_config(cfg)
         assert result.style.table_fontsize == "small"
+
+
+# ── _validate_url_strategy ──────────────────────────────────────────────
+
+
+class TestValidateUrlStrategy:
+    @pytest.mark.parametrize("strategy", ["keep", "strip", "footnote_all", "footnote_long"])
+    def test_valid_strategies_accepted(self, strategy: str) -> None:
+        _validate_url_strategy(strategy)
+
+    def test_unknown_strategy_rejected(self) -> None:
+        with pytest.raises(ConfigValueError, match="Unknown url_strategy.*'typo'"):
+            _validate_url_strategy("typo")
+
+    def test_empty_string_rejected(self) -> None:
+        with pytest.raises(ConfigValueError, match="Unknown url_strategy"):
+            _validate_url_strategy("")
+
+    @given(value=st.text(min_size=1).filter(lambda v: v not in {"keep", "strip", "footnote_all", "footnote_long"}))
+    def test_arbitrary_strings_rejected(self, value: str) -> None:
+        with pytest.raises(ConfigValueError):
+            _validate_url_strategy(value)
+
+
+class TestValidateUrlStrategyIntegration:
+    def test_load_config_rejects_invalid_url_strategy(self, tmp_path: Path) -> None:
+        data = dict(VALID_DATA)
+        data["obsidian"] = {**VALID_DATA["obsidian"], "url_strategy": "bogus"}
+        cfg = write_config(tmp_path, data)
+        with pytest.raises(ConfigValueError, match="Unknown url_strategy.*'bogus'"):
+            load_config(cfg)
+
+    def test_load_config_accepts_valid_url_strategy(self, tmp_path: Path) -> None:
+        data = dict(VALID_DATA)
+        data["obsidian"] = {**VALID_DATA["obsidian"], "url_strategy": "keep"}
+        cfg = write_config(tmp_path, data)
+        result = load_config(cfg)
+        assert result.obsidian.url_strategy == "keep"
