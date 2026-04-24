@@ -7,7 +7,7 @@ import click
 import yaml
 
 from obsidian_export import run
-from obsidian_export.config import _load_default_yaml, default_config, load_config
+from obsidian_export.config import default_config, load_config, load_default_yaml
 from obsidian_export.profiles import (
     delete_profile,
     get_profile_path,
@@ -58,7 +58,7 @@ def profile_create(name: str, from_file: str | None) -> None:
     if from_file:
         config_dict = yaml.safe_load(Path(from_file).read_text(encoding="utf-8"))
     else:
-        config_dict = _load_default_yaml()
+        config_dict = load_default_yaml()
 
     result = save_profile(name, config_dict)
     click.echo(f"Created profile: {result}")
@@ -108,7 +108,7 @@ def init() -> None:
     # Write default profile if it doesn't exist
     default_path = get_profile_path("default")
     if not default_path.exists():
-        save_profile("default", _load_default_yaml())
+        save_profile("default", load_default_yaml())
         click.echo(f"Created default profile: {default_path}")
     click.echo(f"Initialized: {base}")
 

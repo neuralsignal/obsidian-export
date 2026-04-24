@@ -15,6 +15,7 @@ from obsidian_export.config.loader import (
     _resolve_path,
     default_config,
     load_config,
+    load_default_yaml,
 )
 from obsidian_export.config.models import (
     CalloutColors,
@@ -52,4 +53,5 @@ __all__ = [
     "_validate_pandoc_variable",
     "default_config",
     "load_config",
+    "load_default_yaml",
 ]

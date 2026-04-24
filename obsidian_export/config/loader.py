@@ -36,6 +36,11 @@ def _load_default_yaml() -> dict[str, Any]:
     return yaml.safe_load(ref.read_text(encoding="utf-8"))
 
 
+def load_default_yaml() -> dict[str, Any]:
+    """Return the bundled default configuration as a raw dict."""
+    return _load_default_yaml()
+
+
 def _resolve_path(raw_path: str, config_dir: Path | None) -> str:
     """Resolve a relative path string against config_dir. Return as string."""
     if raw_path and config_dir and not Path(raw_path).is_absolute():
