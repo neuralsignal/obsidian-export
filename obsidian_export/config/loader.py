@@ -84,19 +84,13 @@ def _parse_unicode_chars(raw: dict[str, str]) -> tuple[tuple[str, str], ...]:
 
 def _build_mermaid_config(raw: dict[str, Any], config_dir: Path | None) -> MermaidConfig:
     """Build MermaidConfig, resolving relative paths against config_dir."""
-    mmdc_bin = Path(raw["mmdc_bin"])
-    if config_dir and not mmdc_bin.is_absolute():
-        mmdc_bin = config_dir / mmdc_bin
-
     puppeteer_config_raw = raw.get("puppeteer_config")
     puppeteer_config: Path | None = None
     if puppeteer_config_raw:
-        puppeteer_config = Path(puppeteer_config_raw)
-        if config_dir and not puppeteer_config.is_absolute():
-            puppeteer_config = config_dir / puppeteer_config
+        puppeteer_config = Path(_resolve_path(puppeteer_config_raw, config_dir))
 
     return MermaidConfig(
-        mmdc_bin=mmdc_bin,
+        mmdc_bin=Path(_resolve_path(raw["mmdc_bin"], config_dir)),
         scale=raw["scale"],
         puppeteer_config=puppeteer_config,
     )
