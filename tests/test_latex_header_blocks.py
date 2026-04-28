@@ -180,6 +180,14 @@ class TestBuildCodeBlock:
         result = _build_code_block("footnotesize")
         assert "\\DefineVerbatimEnvironment{verbatim}" in result
 
+    def test_rejects_dangerous_macro(self) -> None:
+        with pytest.raises(UnsafeLatexError, match="code_fontsize"):
+            _build_code_block("write18")
+
+    def test_rejects_input_macro(self) -> None:
+        with pytest.raises(UnsafeLatexError, match="code_fontsize"):
+            _build_code_block("input{/etc/passwd}")
+
 
 class TestBuildLineSpacingBlock:
     def test_one_point_zero_returns_empty(self) -> None:

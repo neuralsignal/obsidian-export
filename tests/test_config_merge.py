@@ -8,7 +8,7 @@ from conftest import VALID_DATA, write_config
 from obsidian_export.config import (
     HeadingStyle,
     TitleStyle,
-    _deep_merge,
+    deep_merge,
     default_config,
     load_config,
 )
@@ -19,14 +19,14 @@ from obsidian_export.config import (
 def test_deep_merge_shallow_override() -> None:
     base = {"a": 1, "b": 2}
     override = {"b": 3, "c": 4}
-    result = _deep_merge(base, override)
+    result = deep_merge(base, override)
     assert result == {"a": 1, "b": 3, "c": 4}
 
 
 def test_deep_merge_nested_dict() -> None:
     base = {"style": {"name": "default", "fontsize": "10pt"}}
     override = {"style": {"fontsize": "12pt"}}
-    result = _deep_merge(base, override)
+    result = deep_merge(base, override)
     assert result["style"]["name"] == "default"
     assert result["style"]["fontsize"] == "12pt"
 
@@ -34,7 +34,7 @@ def test_deep_merge_nested_dict() -> None:
 def test_deep_merge_base_unchanged() -> None:
     base = {"a": {"b": 1}}
     override = {"a": {"b": 2}}
-    _deep_merge(base, override)
+    deep_merge(base, override)
     assert base["a"]["b"] == 1
 
 

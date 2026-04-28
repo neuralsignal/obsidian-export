@@ -1,5 +1,6 @@
 """Stage 1: Vault operations — frontmatter, embed resolution, Obsidian syntax stripping."""
 
+import logging
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -8,6 +9,8 @@ from typing import Any
 import yaml
 
 from obsidian_export.exceptions import CircularEmbedError, EmbedNotFoundError, PathTraversalError
+
+_log = logging.getLogger(__name__)
 
 _OBSIDIAN_KEYS = frozenset(["aliases", "tags", "cssclass", "publish", "banner", "cssclasses"])
 
@@ -77,7 +80,7 @@ def parse_frontmatter(text: str) -> tuple[dict[str, Any], str]:
     try:
         fm = yaml.safe_load(raw) or {}
     except yaml.YAMLError:
-        # Retry with auto-quoting of values that contain colons.
+        _log.warning("YAML frontmatter parse failed, retrying with auto-quoted colons:\n%s", raw)
         fm = yaml.safe_load(_quote_yaml_values(raw)) or {}
     body = text[m.end() :]
     return fm, body

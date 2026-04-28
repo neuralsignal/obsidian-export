@@ -5,7 +5,7 @@ import subprocess
 from pathlib import Path
 
 from obsidian_export.exceptions import SVGConversionError
-from obsidian_export.pipeline.path_guards import assert_within_root
+from obsidian_export.pipeline.image_convert import convert_image_references
 
 _IMG_REF_RE = re.compile(r"!\[([^\]]*)\]\(([^)]+\.svg)\)")
 
@@ -17,46 +17,15 @@ def _convert_svg_images(body: str, tmpdir: Path, resource_path: Path | None, rsv
     to a file in tmpdir using the given rsvg_format and file_ext, and the
     reference is updated. Relative SVG paths are resolved against resource_path.
     """
-    counter = 0
 
-    def replace_svg(m: re.Match) -> str:
-        """Replace an SVG image reference with a rsvg-converted version.
-
-        Receives a match with group(1) as alt text and group(2) as the SVG path.
-        Skips URLs. Converts the SVG via rsvg-convert into tmpdir and returns an
-        updated markdown image reference. Increments the outer ``counter`` for
-        unique filenames.
-        """
-        nonlocal counter
-        alt_text = m.group(1)
-        svg_raw = m.group(2)
-
-        # Skip URLs
-        if svg_raw.startswith(("http://", "https://")):
-            return m.group(0)
-
-        svg_path = Path(svg_raw)
-
-        # Resolve relative paths against resource_path
-        if not svg_path.is_absolute() and resource_path is not None:
-            svg_path = resource_path / svg_path
-
-        if resource_path is not None:
-            assert_within_root(svg_path, resource_path, "SVG")
-
-        if not svg_path.exists():
-            raise SVGConversionError(f"SVG file not found: {svg_path}")
-
-        counter += 1
-        out_path = tmpdir / f"svg_{counter}{file_ext}"
-
+    def _do_convert(src: Path, dst: Path) -> None:
         try:
             subprocess.run(
                 [
                     "rsvg-convert",
                     f"--format={rsvg_format}",
-                    f"--output={out_path}",
-                    str(svg_path),
+                    f"--output={dst}",
+                    str(src),
                 ],
                 check=True,
                 capture_output=True,
@@ -65,11 +34,20 @@ def _convert_svg_images(body: str, tmpdir: Path, resource_path: Path | None, rsv
             raise SVGConversionError("rsvg-convert not found: is librsvg installed?") from exc
         except subprocess.CalledProcessError as exc:
             stderr = exc.stderr.decode(errors="replace") if exc.stderr else "(no stderr)"
-            raise SVGConversionError(f"rsvg-convert failed for {svg_path} (exit {exc.returncode}): {stderr}") from exc
+            raise SVGConversionError(f"rsvg-convert failed for {src} (exit {exc.returncode}): {stderr}") from exc
 
-        return f"![{alt_text}]({out_path})"
-
-    return _IMG_REF_RE.sub(replace_svg, body)
+    return convert_image_references(
+        body,
+        tmpdir,
+        resource_path,
+        _IMG_REF_RE,
+        _do_convert,
+        "svg_",
+        file_ext,
+        "SVG",
+        SVGConversionError,
+        lambda _m: None,
+    )
 
 
 def convert_svg_images(body: str, tmpdir: Path, resource_path: Path | None) -> str:

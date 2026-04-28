@@ -12,7 +12,7 @@ from obsidian_export.config import (
     ObsidianConfig,
     PandocConfig,
     StyleConfig,
-    _build_config,
+    build_config,
     default_config,
     load_config,
 )
@@ -195,11 +195,11 @@ def test_load_config_puppeteer_config_absolute_preserved(tmp_path: Path) -> None
     assert result.mermaid.puppeteer_config == Path("/etc/puppeteer.json")
 
 
-# ── _build_config with relative config_dir ─────────────────────────────────
+# ── build_config with relative config_dir ─────────────────────────────────
 
 
 def test_build_config_with_relative_config_dir(tmp_path: Path) -> None:
-    """Passing a relative config_dir to _build_config resolves it to absolute."""
+    """Passing a relative config_dir to build_config resolves it to absolute."""
     import os
 
     original_dir = os.getcwd()
@@ -210,7 +210,6 @@ def test_build_config_with_relative_config_dir(tmp_path: Path) -> None:
         raw = {
             "mermaid": {"mmdc_bin": "mmdc", "scale": 3},
             "obsidian": {
-                "wikilink_strategy": "text",
                 "url_strategy": "footnote_long",
                 "url_length_threshold": 60,
                 "max_embed_depth": 10,
@@ -218,7 +217,7 @@ def test_build_config_with_relative_config_dir(tmp_path: Path) -> None:
             "pandoc": {"from_format": "gfm"},
             "style": VALID_DATA["style"],
         }
-        result = _build_config(raw, config_dir=rel_dir)
+        result = build_config(raw, config_dir=rel_dir)
         assert result.mermaid.mmdc_bin.is_absolute()
         assert str(result.mermaid.mmdc_bin) == str((tmp_path / "subdir" / "mmdc").resolve())
     finally:

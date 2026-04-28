@@ -5,6 +5,7 @@
 ### Security
 
 * bump Pillow pin to `>=12.1.1,<13` to fix CVE-2026-25990 (PSD out-of-bounds write); previous pin `>=10.0,<12` blocked the fix ([#141](https://github.com/neuralsignal/obsidian-export/issues/141))
+* validate `heading_styles.size`, `title_style.size`, and `code_fontsize` against dangerous LaTeX macros and restrict `heading_styles.level` to a sectioning-command allowlist (`section`, `subsection`, `subsubsection`, `paragraph`, `subparagraph`) ([#148](https://github.com/neuralsignal/obsidian-export/issues/148))
 
 ## [0.5.2](https://github.com/neuralsignal/obsidian-export/compare/v0.5.1...v0.5.2) (2026-04-13)
 
