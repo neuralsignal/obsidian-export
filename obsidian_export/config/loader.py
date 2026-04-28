@@ -87,10 +87,10 @@ def build_mermaid_config(raw: dict[str, Any], config_dir: Path | None) -> Mermai
     puppeteer_config_raw = raw.get("puppeteer_config")
     puppeteer_config: Path | None = None
     if puppeteer_config_raw:
-        puppeteer_config = Path(_resolve_path(puppeteer_config_raw, config_dir))
+        puppeteer_config = Path(resolve_path(puppeteer_config_raw, config_dir))
 
     return MermaidConfig(
-        mmdc_bin=Path(_resolve_path(raw["mmdc_bin"], config_dir)),
+        mmdc_bin=Path(resolve_path(raw["mmdc_bin"], config_dir)),
         scale=raw["scale"],
         puppeteer_config=puppeteer_config,
     )
