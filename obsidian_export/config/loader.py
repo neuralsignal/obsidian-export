@@ -16,7 +16,7 @@ from obsidian_export.config.models import (
     StyleConfig,
     TitleStyle,
 )
-from obsidian_export.config.validators import validate_from_format, validate_pandoc_variable
+from obsidian_export.config.validators import validate_from_format, validate_pandoc_variable, validate_url_strategy
 
 
 def deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
@@ -148,6 +148,8 @@ def build_config(raw: dict[str, Any], config_dir: Path | None) -> ConvertConfig:
     validate_pandoc_variable("urlcolor", style.urlcolor)
     validate_pandoc_variable("code_fontsize", style.code_fontsize)
     validate_pandoc_variable("table_fontsize", style.table_fontsize)
+
+    validate_url_strategy(raw["obsidian"]["url_strategy"])
 
     return ConvertConfig(
         mermaid=build_mermaid_config(raw["mermaid"], config_dir),

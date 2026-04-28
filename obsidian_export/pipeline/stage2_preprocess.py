@@ -3,6 +3,7 @@
 import re
 
 from obsidian_export.config import ObsidianConfig
+from obsidian_export.exceptions import ConfigValueError
 
 # Currency: $ followed by a digit or space then digit (e.g. $25 or $ 25)
 _CURRENCY_RE = re.compile(r"\$(?=[\d\s])")
@@ -113,8 +114,10 @@ def process_urls(text: str, strategy: str, threshold: int) -> str:
         return m.group(0)
 
     if strategy == "strip":
-        # Remove bare URLs entirely
         return _BARE_URL_RE.sub("", text)
+
+    if strategy not in ("footnote_all", "footnote_long"):
+        raise ConfigValueError(f"Unknown url_strategy: {strategy!r}")
 
     # For footnote strategies, wrap in angle brackets first (Pandoc autolinks)
     segments = _split_preserve_code(text)

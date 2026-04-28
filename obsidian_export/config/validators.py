@@ -56,6 +56,18 @@ def validate_from_format(value: str) -> None:
             )
 
 
+_VALID_URL_STRATEGIES: frozenset[str] = frozenset({"keep", "strip", "footnote_all", "footnote_long"})
+
+
+def validate_url_strategy(value: str) -> None:
+    """Validate url_strategy against the allowlist of supported strategies.
+
+    Raises ConfigValueError if the value is not recognised.
+    """
+    if value not in _VALID_URL_STRATEGIES:
+        raise ConfigValueError(f"Unknown url_strategy: {value!r}. Allowed: {sorted(_VALID_URL_STRATEGIES)}")
+
+
 def validate_pandoc_variable(name: str, value: str) -> None:
     """Validate a string that will be passed as a pandoc --variable value.
 
