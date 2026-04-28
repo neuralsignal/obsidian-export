@@ -28,7 +28,7 @@ _PANDOC_EXTENSION_RE: re.Pattern[str] = re.compile(r"^[a-z][a-z0-9_]*$")
 _PANDOC_VARIABLE_RE: re.Pattern[str] = re.compile(r"^[a-zA-Z0-9,=._\- ]+$")
 
 
-def _validate_from_format(value: str) -> None:
+def validate_from_format(value: str) -> None:
     """Validate pandoc from_format against safe base formats and extensions.
 
     Raises ConfigValueError if the base format is not allowlisted,
@@ -56,7 +56,7 @@ def _validate_from_format(value: str) -> None:
             )
 
 
-def _validate_pandoc_variable(name: str, value: str) -> None:
+def validate_pandoc_variable(name: str, value: str) -> None:
     """Validate a string that will be passed as a pandoc --variable value.
 
     Allows alphanumeric characters and limited punctuation (commas, equals,

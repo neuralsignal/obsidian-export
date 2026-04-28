@@ -1,20 +1,20 @@
 """Configuration module for obsidian-export pipeline.
 
-Re-exports all public and test-visible names so that
+Re-exports all public names so that
 ``from obsidian_export.config import X`` continues to work.
 """
 
 from obsidian_export.config.loader import (
-    _build_config,
-    _deep_merge,
-    _load_default_yaml,
-    _parse_brand_colors,
-    _parse_heading_styles,
-    _parse_title_style,
-    _parse_unicode_chars,
-    _resolve_path,
+    build_config,
+    deep_merge,
     default_config,
     load_config,
+    load_default_yaml,
+    parse_brand_colors,
+    parse_heading_styles,
+    parse_title_style,
+    parse_unicode_chars,
+    resolve_path,
 )
 from obsidian_export.config.models import (
     CalloutColors,
@@ -27,8 +27,8 @@ from obsidian_export.config.models import (
     TitleStyle,
 )
 from obsidian_export.config.validators import (
-    _validate_from_format,
-    _validate_pandoc_variable,
+    validate_from_format,
+    validate_pandoc_variable,
 )
 
 __all__ = [
@@ -40,16 +40,16 @@ __all__ = [
     "PandocConfig",
     "StyleConfig",
     "TitleStyle",
-    "_build_config",
-    "_deep_merge",
-    "_load_default_yaml",
-    "_parse_brand_colors",
-    "_parse_heading_styles",
-    "_parse_title_style",
-    "_parse_unicode_chars",
-    "_resolve_path",
-    "_validate_from_format",
-    "_validate_pandoc_variable",
+    "build_config",
+    "deep_merge",
     "default_config",
     "load_config",
+    "load_default_yaml",
+    "parse_brand_colors",
+    "parse_heading_styles",
+    "parse_title_style",
+    "parse_unicode_chars",
+    "resolve_path",
+    "validate_from_format",
+    "validate_pandoc_variable",
 ]

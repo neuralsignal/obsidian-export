@@ -16,17 +16,17 @@ from obsidian_export.config import (
     PandocConfig,
     StyleConfig,
     TitleStyle,
-    _build_config,
-    _deep_merge,
-    _parse_brand_colors,
-    _parse_heading_styles,
-    _parse_title_style,
-    _parse_unicode_chars,
-    _resolve_path,
-    _validate_from_format,
-    _validate_pandoc_variable,
+    build_config,
+    deep_merge,
     default_config,
     load_config,
+    parse_brand_colors,
+    parse_heading_styles,
+    parse_title_style,
+    parse_unicode_chars,
+    resolve_path,
+    validate_from_format,
+    validate_pandoc_variable,
 )
 from obsidian_export.exceptions import ConfigValueError
 
@@ -217,14 +217,14 @@ def test_code_fontsize_override(tmp_path: Path) -> None:
 def test_deep_merge_shallow_override() -> None:
     base = {"a": 1, "b": 2}
     override = {"b": 3, "c": 4}
-    result = _deep_merge(base, override)
+    result = deep_merge(base, override)
     assert result == {"a": 1, "b": 3, "c": 4}
 
 
 def test_deep_merge_nested_dict() -> None:
     base = {"style": {"name": "default", "fontsize": "10pt"}}
     override = {"style": {"fontsize": "12pt"}}
-    result = _deep_merge(base, override)
+    result = deep_merge(base, override)
     assert result["style"]["name"] == "default"
     assert result["style"]["fontsize"] == "12pt"
 
@@ -232,7 +232,7 @@ def test_deep_merge_nested_dict() -> None:
 def test_deep_merge_base_unchanged() -> None:
     base = {"a": {"b": 1}}
     override = {"a": {"b": 2}}
-    _deep_merge(base, override)
+    deep_merge(base, override)
     assert base["a"]["b"] == 1
 
 
@@ -433,36 +433,36 @@ def test_logo_absolute_preserved(tmp_path: Path) -> None:
 
 
 def test_resolve_path_empty_string() -> None:
-    assert _resolve_path("", Path("/some/dir")) == ""
+    assert resolve_path("", Path("/some/dir")) == ""
 
 
 def test_resolve_path_absolute_unchanged() -> None:
-    assert _resolve_path("/abs/file.txt", Path("/some/dir")) == "/abs/file.txt"
+    assert resolve_path("/abs/file.txt", Path("/some/dir")) == "/abs/file.txt"
 
 
 def test_resolve_path_relative_resolved(tmp_path: Path) -> None:
-    result = _resolve_path("sub/file.txt", tmp_path)
+    result = resolve_path("sub/file.txt", tmp_path)
     assert result == str((tmp_path / "sub/file.txt").resolve())
 
 
 def test_resolve_path_no_config_dir() -> None:
-    assert _resolve_path("relative/path", None) == "relative/path"
+    assert resolve_path("relative/path", None) == "relative/path"
 
 
 # ── _parse_brand_colors ───────────────────────────────────────────────────
 
 
 def test_parse_brand_colors_empty() -> None:
-    assert _parse_brand_colors({}) == ()
+    assert parse_brand_colors({}) == ()
 
 
 def test_parse_brand_colors_single() -> None:
-    result = _parse_brand_colors({"red": [255, 0, 0]})
+    result = parse_brand_colors({"red": [255, 0, 0]})
     assert result == (("red", 255, 0, 0),)
 
 
 def test_parse_brand_colors_coerces_to_int() -> None:
-    result = _parse_brand_colors({"x": [1.9, 2.1, 3.7]})
+    result = parse_brand_colors({"x": [1.9, 2.1, 3.7]})
     assert result == (("x", 1, 2, 3),)
 
 
@@ -473,7 +473,7 @@ def test_parse_brand_colors_coerces_to_int() -> None:
     b=st.integers(0, 255),
 )
 def test_parse_brand_colors_property(name: str, r: int, g: int, b: int) -> None:
-    result = _parse_brand_colors({name: [r, g, b]})
+    result = parse_brand_colors({name: [r, g, b]})
     assert len(result) == 1
     assert result[0] == (name, r, g, b)
 
@@ -482,17 +482,17 @@ def test_parse_brand_colors_property(name: str, r: int, g: int, b: int) -> None:
 
 
 def test_parse_heading_styles_empty() -> None:
-    assert _parse_heading_styles([]) == ()
+    assert parse_heading_styles([]) == ()
 
 
 def test_parse_heading_styles_defaults_optional_fields() -> None:
-    result = _parse_heading_styles([{"level": "section", "size": "Large"}])
+    result = parse_heading_styles([{"level": "section", "size": "Large"}])
     assert result == (HeadingStyle(level="section", size="Large", bold=False, sans=False, color="", uppercase=False),)
 
 
 def test_parse_heading_styles_all_fields() -> None:
     raw = [{"level": "sub", "size": "small", "bold": True, "sans": True, "color": "red", "uppercase": True}]
-    result = _parse_heading_styles(raw)
+    result = parse_heading_styles(raw)
     assert result[0].bold is True
     assert result[0].uppercase is True
     assert result[0].color == "red"
@@ -507,7 +507,7 @@ def test_parse_heading_styles_all_fields() -> None:
 )
 def test_parse_heading_styles_property(level: str, size: str, bold: bool, sans: bool, uppercase: bool) -> None:
     raw = [{"level": level, "size": size, "bold": bold, "sans": sans, "color": "", "uppercase": uppercase}]
-    result = _parse_heading_styles(raw)
+    result = parse_heading_styles(raw)
     assert len(result) == 1
     assert result[0].level == level
     assert result[0].bold == bold
@@ -517,21 +517,21 @@ def test_parse_heading_styles_property(level: str, size: str, bold: bool, sans: 
 
 
 def test_parse_title_style_none() -> None:
-    assert _parse_title_style(None) is None
+    assert parse_title_style(None) is None
 
 
 def test_parse_title_style_empty_dict() -> None:
-    assert _parse_title_style({}) is None
+    assert parse_title_style({}) is None
 
 
 def test_parse_title_style_full() -> None:
     raw = {"size": "huge", "bold": True, "sans": True, "color": "blue", "date_visible": False, "vskip_after": "1em"}
-    result = _parse_title_style(raw)
+    result = parse_title_style(raw)
     assert result == TitleStyle(size="huge", bold=True, sans=True, color="blue", date_visible=False, vskip_after="1em")
 
 
 def test_parse_title_style_defaults_optional() -> None:
-    result = _parse_title_style({"size": "large"})
+    result = parse_title_style({"size": "large"})
     assert result is not None
     assert result.bold is False
     assert result.sans is False
@@ -544,18 +544,18 @@ def test_parse_title_style_defaults_optional() -> None:
 
 
 def test_parse_unicode_chars_empty() -> None:
-    assert _parse_unicode_chars({}) == ()
+    assert parse_unicode_chars({}) == ()
 
 
 def test_parse_unicode_chars_round_trip() -> None:
     raw = {"⚠": "\\triangle", "→": "\\to"}
-    result = _parse_unicode_chars(raw)
+    result = parse_unicode_chars(raw)
     assert dict(result) == raw
 
 
 @given(data=st.dictionaries(st.text(min_size=1, max_size=3), st.text(min_size=1, max_size=30), max_size=10))
 def test_parse_unicode_chars_property(data: dict[str, str]) -> None:
-    result = _parse_unicode_chars(data)
+    result = parse_unicode_chars(data)
     assert len(result) == len(data)
     assert dict(result) == data
 
@@ -592,7 +592,7 @@ def test_load_config_puppeteer_config_absolute_preserved(tmp_path: Path) -> None
 
 
 def test_build_config_with_relative_config_dir(tmp_path: Path) -> None:
-    """Passing a relative config_dir to _build_config resolves it to absolute."""
+    """Passing a relative config_dir to build_config resolves it to absolute."""
     import os
 
     original_dir = os.getcwd()
@@ -611,7 +611,7 @@ def test_build_config_with_relative_config_dir(tmp_path: Path) -> None:
             "pandoc": {"from_format": "gfm"},
             "style": VALID_DATA["style"],
         }
-        result = _build_config(raw, config_dir=rel_dir)
+        result = build_config(raw, config_dir=rel_dir)
         assert result.mermaid.mmdc_bin.is_absolute()
         assert str(result.mermaid.mmdc_bin) == str((tmp_path / "subdir" / "mmdc").resolve())
     finally:
@@ -623,39 +623,39 @@ def test_build_config_with_relative_config_dir(tmp_path: Path) -> None:
 
 class TestValidateFromFormat:
     def test_default_format_accepted(self) -> None:
-        _validate_from_format("gfm-tex_math_dollars+footnotes")
+        validate_from_format("gfm-tex_math_dollars+footnotes")
 
     def test_plain_base_format_accepted(self) -> None:
-        _validate_from_format("gfm")
-        _validate_from_format("markdown")
-        _validate_from_format("commonmark")
-        _validate_from_format("commonmark_x")
+        validate_from_format("gfm")
+        validate_from_format("markdown")
+        validate_from_format("commonmark")
+        validate_from_format("commonmark_x")
 
     def test_multiple_extensions_accepted(self) -> None:
-        _validate_from_format("gfm+footnotes-smart+pipe_tables")
+        validate_from_format("gfm+footnotes-smart+pipe_tables")
 
     def test_unsupported_base_format_rejected(self) -> None:
         with pytest.raises(ConfigValueError, match="Unsupported pandoc base format"):
-            _validate_from_format("html")
+            validate_from_format("html")
 
     def test_dangerous_extension_raw_html_rejected(self) -> None:
         with pytest.raises(ConfigValueError, match="Dangerous pandoc extension.*raw_html"):
-            _validate_from_format("gfm+raw_html")
+            validate_from_format("gfm+raw_html")
 
     def test_dangerous_extension_raw_attribute_rejected(self) -> None:
         with pytest.raises(ConfigValueError, match="Dangerous pandoc extension.*raw_attribute"):
-            _validate_from_format("markdown+raw_attribute")
+            validate_from_format("markdown+raw_attribute")
 
     def test_disabling_dangerous_extension_accepted(self) -> None:
-        _validate_from_format("gfm-raw_html")
+        validate_from_format("gfm-raw_html")
 
     def test_malformed_extension_rejected(self) -> None:
         with pytest.raises(ConfigValueError, match="Malformed pandoc extension"):
-            _validate_from_format("gfm+123bad")
+            validate_from_format("gfm+123bad")
 
     @given(base=st.sampled_from(["gfm", "markdown", "commonmark", "commonmark_x"]))
     def test_safe_base_formats_always_accepted(self, base: str) -> None:
-        _validate_from_format(base)
+        validate_from_format(base)
 
 
 class TestValidateFromFormatIntegration:
@@ -681,32 +681,32 @@ class TestValidateFromFormatIntegration:
 
 class TestValidatePandocVariable:
     def test_safe_geometry_accepted(self) -> None:
-        _validate_pandoc_variable("geometry", "a4paper,margin=25mm")
+        validate_pandoc_variable("geometry", "a4paper,margin=25mm")
 
     def test_safe_fontsize_accepted(self) -> None:
-        _validate_pandoc_variable("fontsize", "10pt")
+        validate_pandoc_variable("fontsize", "10pt")
 
     def test_safe_color_accepted(self) -> None:
-        _validate_pandoc_variable("linkcolor", "NavyBlue")
+        validate_pandoc_variable("linkcolor", "NavyBlue")
 
     def test_empty_string_accepted(self) -> None:
-        _validate_pandoc_variable("linkcolor", "")
+        validate_pandoc_variable("linkcolor", "")
 
     def test_shell_metachar_rejected(self) -> None:
         with pytest.raises(ConfigValueError, match="Invalid characters"):
-            _validate_pandoc_variable("geometry", "a4paper;rm -rf /")
+            validate_pandoc_variable("geometry", "a4paper;rm -rf /")
 
     def test_backtick_rejected(self) -> None:
         with pytest.raises(ConfigValueError, match="Invalid characters"):
-            _validate_pandoc_variable("fontsize", "`malicious`")
+            validate_pandoc_variable("fontsize", "`malicious`")
 
     def test_braces_rejected(self) -> None:
         with pytest.raises(ConfigValueError, match="Invalid characters"):
-            _validate_pandoc_variable("geometry", "a4paper{evil}")
+            validate_pandoc_variable("geometry", "a4paper{evil}")
 
     @given(value=st.from_regex(r"^[a-zA-Z0-9,=._\- ]+$", fullmatch=True))
     def test_safe_values_always_accepted(self, value: str) -> None:
-        _validate_pandoc_variable("test_field", value)
+        validate_pandoc_variable("test_field", value)
 
     @given(
         value=st.text(
@@ -717,7 +717,7 @@ class TestValidatePandocVariable:
     )
     def test_dangerous_chars_always_rejected(self, value: str) -> None:
         with pytest.raises(ConfigValueError):
-            _validate_pandoc_variable("test_field", value)
+            validate_pandoc_variable("test_field", value)
 
 
 class TestValidatePandocVariableIntegration:
