@@ -7,6 +7,20 @@
 * bump Pillow pin to `>=12.1.1,<13` to fix CVE-2026-25990 (PSD out-of-bounds write); previous pin `>=10.0,<12` blocked the fix ([#141](https://github.com/neuralsignal/obsidian-export/issues/141))
 * validate `heading_styles.size`, `title_style.size`, and `code_fontsize` against dangerous LaTeX macros and restrict `heading_styles.level` to a sectioning-command allowlist (`section`, `subsection`, `subsubsection`, `paragraph`, `subparagraph`) ([#148](https://github.com/neuralsignal/obsidian-export/issues/148))
 
+## [0.5.3](https://github.com/neuralsignal/obsidian-export/compare/v0.5.2...v0.5.3) (2026-04-28)
+
+
+### Bug Fixes
+
+* bump pytest to &gt;=9.0.3 to address CVE-2025-71176 ([#150](https://github.com/neuralsignal/obsidian-export/issues/150)) ([7c8ae72](https://github.com/neuralsignal/obsidian-export/commit/7c8ae72be6148d4f183790435b3492aa76097647))
+* expose public load_default_yaml, stop importing private _load_default_yaml in CLI ([#154](https://github.com/neuralsignal/obsidian-export/issues/154)) ([2fdeab0](https://github.com/neuralsignal/obsidian-export/commit/2fdeab026bccf6f5dafaa07db8be98820a309537))
+* log YAML parse failure before auto-quote retry in stage1_vault ([#156](https://github.com/neuralsignal/obsidian-export/issues/156)) ([40357a4](https://github.com/neuralsignal/obsidian-export/commit/40357a4539ca760bb360c35e05108ba4bd314b5c))
+* reject invalid url_strategy at config load and runtime ([#158](https://github.com/neuralsignal/obsidian-export/issues/158)) ([4bb95b6](https://github.com/neuralsignal/obsidian-export/commit/4bb95b68461dbc2f87beb4c82e47a90e6cbc03e8))
+* resolve merge conflicts with main ([ebf71ec](https://github.com/neuralsignal/obsidian-export/commit/ebf71ec122943c6b1b685e89a2c2c7eb62953504))
+* resolve merge conflicts with main after public API rename ([18107d8](https://github.com/neuralsignal/obsidian-export/commit/18107d83abcae1de0145e61dc2c49b5d23d28d5d))
+* reuse _resolve_path in _build_mermaid_config to eliminate DRY violation ([#159](https://github.com/neuralsignal/obsidian-export/issues/159)) ([86a29bb](https://github.com/neuralsignal/obsidian-export/commit/86a29bb8d21c39a6b8b823763d46388a16041874))
+* validate heading/title/code style fields against dangerous LaTeX macros ([#148](https://github.com/neuralsignal/obsidian-export/issues/148)) ([f477533](https://github.com/neuralsignal/obsidian-export/commit/f477533c4f52670e6dc593a8533ca4fd866377fb))
+
 ## [0.5.2](https://github.com/neuralsignal/obsidian-export/compare/v0.5.1...v0.5.2) (2026-04-13)
 
 
