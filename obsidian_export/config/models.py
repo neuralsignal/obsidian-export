@@ -13,7 +13,6 @@ class MermaidConfig:
 
 @dataclass(frozen=True)
 class ObsidianConfig:
-    wikilink_strategy: str
     url_strategy: str
     url_length_threshold: int
     max_embed_depth: int

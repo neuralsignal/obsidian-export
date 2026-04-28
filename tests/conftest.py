@@ -14,7 +14,6 @@ def write_config(tmp_path: Path, data: dict) -> Path:
 VALID_DATA = {
     "mermaid": {"mmdc_bin": ".mmdc/node_modules/.bin/mmdc", "scale": 3},
     "obsidian": {
-        "wikilink_strategy": "text",
         "url_strategy": "footnote_long",
         "url_length_threshold": 60,
         "max_embed_depth": 10,

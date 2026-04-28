@@ -210,7 +210,6 @@ def test_build_config_with_relative_config_dir(tmp_path: Path) -> None:
         raw = {
             "mermaid": {"mmdc_bin": "mmdc", "scale": 3},
             "obsidian": {
-                "wikilink_strategy": "text",
                 "url_strategy": "footnote_long",
                 "url_length_threshold": 60,
                 "max_embed_depth": 10,
