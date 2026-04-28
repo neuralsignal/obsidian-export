@@ -14,6 +14,7 @@ from pathlib import Path
 from PIL import Image
 
 from obsidian_export.exceptions import ImageConversionError
+from obsidian_export.pipeline.image_convert import convert_image_references
 from obsidian_export.pipeline.path_guards import assert_within_root
 
 PDF_NATIVE_EXTENSIONS = frozenset({".png", ".jpg", ".jpeg", ".pdf"})
@@ -39,63 +40,45 @@ def convert_images(
     stage3_svg). Each unsupported image is converted to PNG in tmpdir, and
     the markdown reference is updated.
     """
-    counter = 0
 
-    def replace_image(m: re.Match) -> str:
-        """Replace a single image reference with a PNG-converted version if needed.
-
-        Receives a match with group(1) as alt text and group(2) as the image path.
-        Skips URLs, SVGs, and natively supported formats. For unsupported formats,
-        converts the image to PNG in tmpdir and returns an updated markdown reference.
-        Increments the outer ``counter`` for unique filenames.
-        """
-        nonlocal counter
-        alt_text = m.group(1)
-        img_raw = m.group(2)
-
-        if img_raw.startswith(("http://", "https://")):
-            return m.group(0)
-
-        img_path = Path(img_raw)
+    def _pre_filter(m: re.Match[str]) -> str | None:
+        img_path = Path(m.group(2))
         ext = img_path.suffix.lower()
 
-        # Skip SVGs — handled by stage3_svg
         if ext == ".svg":
             return m.group(0)
 
-        # Natively supported formats don't need Pillow conversion, but their
-        # relative paths must still be made absolute so that tectonic (which
-        # runs in a temp directory) can locate them.
         if not _needs_conversion(ext, native_extensions):
             if not img_path.is_absolute() and resource_path is not None:
                 abs_path = resource_path / img_path
                 assert_within_root(abs_path, resource_path, "Image")
-                return f"![{alt_text}]({abs_path})"
+                return f"![{m.group(1)}]({abs_path})"
             return m.group(0)
 
-        if not img_path.is_absolute() and resource_path is not None:
-            img_path = resource_path / img_path
+        return None
 
-        if resource_path is not None:
-            assert_within_root(img_path, resource_path, "Image")
-
-        if not img_path.exists():
-            raise ImageConversionError(f"Image file not found: {img_path}")
-
-        counter += 1
-        out_path = tmpdir / f"img_{counter}.png"
-
+    def _do_convert(src: Path, dst: Path) -> None:
+        ext = src.suffix.lower()
         try:
-            with Image.open(img_path) as im:
-                im.save(out_path, format="PNG")
+            with Image.open(src) as im:
+                im.save(dst, format="PNG")
         except (OSError, ValueError) as exc:
             raise ImageConversionError(
-                f"Failed to convert {img_path} to PNG: {exc}. Ensure Pillow supports the {ext} format."
+                f"Failed to convert {src} to PNG: {exc}. Ensure Pillow supports the {ext} format."
             ) from exc
 
-        return f"![{alt_text}]({out_path})"
-
-    return _IMG_REF_RE.sub(replace_image, body)
+    return convert_image_references(
+        body,
+        tmpdir,
+        resource_path,
+        _IMG_REF_RE,
+        _do_convert,
+        "img_",
+        ".png",
+        "Image",
+        ImageConversionError,
+        _pre_filter,
+    )
 
 
 def convert_images_for_pdf(

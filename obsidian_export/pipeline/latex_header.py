@@ -13,6 +13,8 @@ _DANGEROUS_LATEX_RE = re.compile(
     re.IGNORECASE,
 )
 
+_VALID_HEADING_LEVELS = frozenset({"section", "subsection", "subsubsection", "paragraph", "subparagraph"})
+
 
 def render_header(style: StyleConfig, template_path: Path, title: str) -> str:
     """Read header.tex template and substitute config values.
@@ -165,8 +167,14 @@ def _build_heading_styles_block(heading_styles: tuple[HeadingStyle, ...]) -> str
         return ""
     lines = ["\\usepackage{titlesec}"]
     for h in heading_styles:
+        if h.level not in _VALID_HEADING_LEVELS:
+            msg = (
+                f"Config field 'heading_styles.level' must be one of {sorted(_VALID_HEADING_LEVELS)}; got '{h.level}'."
+            )
+            raise UnsafeLatexError(msg)
+        _validate_latex_value(f"\\{h.size}", "heading_styles.size")
         parts = ["\\normalfont"]
-        parts.append(f"\\{_escape_latex(h.size)}")
+        parts.append(f"\\{h.size}")
         if h.bold:
             parts.append("\\bfseries")
         if h.sans:
@@ -176,8 +184,7 @@ def _build_heading_styles_block(heading_styles: tuple[HeadingStyle, ...]) -> str
         fmt = "".join(parts)
         # For the content argument (last {}), use \\MakeUppercase if uppercase
         content_arg = "{\\MakeUppercase}" if h.uppercase else "{}"
-        escaped_level = _escape_latex(h.level)
-        lines.append(f"\\titleformat{{\\{escaped_level}}}\n  {{{fmt}}}\n  {{\\the{escaped_level}}}{{1em}}{content_arg}")
+        lines.append(f"\\titleformat{{\\{h.level}}}\n  {{{fmt}}}\n  {{\\the{h.level}}}{{1em}}{content_arg}")
     return "\n\n".join(lines)
 
 
@@ -185,8 +192,9 @@ def _build_title_style_block(title_style: TitleStyle | None) -> str:
     """Generate custom \\maketitle definition."""
     if title_style is None:
         return ""
+    _validate_latex_value(f"\\{title_style.size}", "title_style.size")
     title_parts = []
-    title_parts.append(f"\\{_escape_latex(title_style.size)}")
+    title_parts.append(f"\\{title_style.size}")
     if title_style.bold:
         title_parts.append("\\bfseries")
     if title_style.sans:
@@ -215,6 +223,7 @@ def _build_title_style_block(title_style: TitleStyle | None) -> str:
 def _build_code_block(code_fontsize: str) -> str:
     """Generate fvextra setup for code block line-wrapping and font size control."""
     cmd = f"\\{code_fontsize}"
+    _validate_latex_value(cmd, "code_fontsize")
     return (
         "\\usepackage{fvextra}\n"
         f"\\fvset{{breaklines=true, fontsize={cmd}}}\n"

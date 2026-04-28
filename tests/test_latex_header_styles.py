@@ -2,7 +2,10 @@
 
 import dataclasses
 
+import pytest
+
 from obsidian_export.config import HeadingStyle, StyleConfig, TitleStyle, default_config
+from obsidian_export.exceptions import UnsafeLatexError
 from obsidian_export.pipeline.latex_header import (
     _build_heading_styles_block,
     _build_title_style_block,
@@ -58,23 +61,33 @@ class TestBuildHeadingStylesBlock:
         assert "\\titleformat{\\subsection}" in result
         assert "\\titleformat{\\subsubsection}" in result
 
-    def test_injection_in_level_escaped(self) -> None:
+    def test_invalid_level_rejected(self) -> None:
         styles = (
             HeadingStyle(
                 level="section}\\write18{cmd", size="Large", bold=False, sans=False, color="", uppercase=False
             ),
         )
-        result = _build_heading_styles_block(styles)
-        assert "\\write18" not in result
+        with pytest.raises(UnsafeLatexError, match="heading_styles.level"):
+            _build_heading_styles_block(styles)
 
-    def test_injection_in_size_escaped(self) -> None:
+    def test_unknown_level_rejected(self) -> None:
+        styles = (HeadingStyle(level="write18", size="Large", bold=False, sans=False, color="", uppercase=False),)
+        with pytest.raises(UnsafeLatexError, match="heading_styles.level"):
+            _build_heading_styles_block(styles)
+
+    def test_dangerous_macro_in_size_rejected(self) -> None:
+        styles = (HeadingStyle(level="section", size="write18", bold=False, sans=False, color="", uppercase=False),)
+        with pytest.raises(UnsafeLatexError, match="dangerous LaTeX macro"):
+            _build_heading_styles_block(styles)
+
+    def test_injection_in_size_rejected(self) -> None:
         styles = (
             HeadingStyle(
                 level="section", size="Large}\\write18{cmd", bold=False, sans=False, color="", uppercase=False
             ),
         )
-        result = _build_heading_styles_block(styles)
-        assert "\\write18" not in result
+        with pytest.raises(UnsafeLatexError, match="dangerous LaTeX macro"):
+            _build_heading_styles_block(styles)
 
     def test_injection_in_color_escaped(self) -> None:
         styles = (
@@ -84,6 +97,12 @@ class TestBuildHeadingStylesBlock:
         )
         result = _build_heading_styles_block(styles)
         assert "\\write18" not in result
+
+    def test_valid_levels_accepted(self) -> None:
+        for level in ("section", "subsection", "subsubsection", "paragraph", "subparagraph"):
+            styles = (HeadingStyle(level=level, size="Large", bold=False, sans=False, color="", uppercase=False),)
+            result = _build_heading_styles_block(styles)
+            assert f"\\titleformat{{\\{level}}}" in result
 
 
 class TestBuildTitleStyleBlock:
@@ -116,10 +135,15 @@ class TestBuildTitleStyleBlock:
         result = _build_title_style_block(ts)
         assert "\\color{turkis}" in result
 
-    def test_injection_in_size_escaped(self) -> None:
+    def test_injection_in_size_rejected(self) -> None:
         ts = TitleStyle(size="huge}\\write18{cmd", bold=False, sans=False, color="", date_visible=False, vskip_after="")
-        result = _build_title_style_block(ts)
-        assert "\\write18" not in result
+        with pytest.raises(UnsafeLatexError, match="dangerous LaTeX macro"):
+            _build_title_style_block(ts)
+
+    def test_dangerous_macro_in_size_rejected(self) -> None:
+        ts = TitleStyle(size="write18", bold=False, sans=False, color="", date_visible=False, vskip_after="")
+        with pytest.raises(UnsafeLatexError, match="dangerous LaTeX macro"):
+            _build_title_style_block(ts)
 
     def test_injection_in_color_escaped(self) -> None:
         ts = TitleStyle(

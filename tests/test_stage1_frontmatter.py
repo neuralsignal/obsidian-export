@@ -1,5 +1,6 @@
 """Tests for stage1_vault: frontmatter parsing, syntax stripping, and property-based tests."""
 
+import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
@@ -79,6 +80,16 @@ class TestParseFrontmatter:
         text = '---\ntitle: "Already: Quoted"\n---\nBody.'
         fm, _ = parse_frontmatter(text)
         assert fm["title"] == "Already: Quoted"
+
+    def test_yaml_retry_logs_warning(self, caplog: pytest.LogCaptureFixture) -> None:
+        """Auto-quote fallback must log the original YAML parse failure."""
+        import logging
+
+        text = "---\ntitle: Memory: Knowledge folder consolidation\ntype: memory\n---\nBody."
+        with caplog.at_level(logging.WARNING, logger="obsidian_export.pipeline.stage1_vault"):
+            fm, _ = parse_frontmatter(text)
+        assert fm["title"] == "Memory: Knowledge folder consolidation"
+        assert any("YAML frontmatter parse failed" in msg for msg in caplog.messages)
 
 
 # ── clean_frontmatter ────────────────────────────────────────────────────────

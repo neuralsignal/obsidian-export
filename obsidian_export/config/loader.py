@@ -16,44 +16,39 @@ from obsidian_export.config.models import (
     StyleConfig,
     TitleStyle,
 )
-from obsidian_export.config.validators import _validate_from_format, _validate_pandoc_variable
+from obsidian_export.config.validators import validate_from_format, validate_pandoc_variable
 
 
-def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
+def deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
     """Recursively merge override into base. override wins on conflicts."""
     merged = dict(base)
     for key, value in override.items():
         if key in merged and isinstance(merged[key], dict) and isinstance(value, dict):
-            merged[key] = _deep_merge(merged[key], value)
+            merged[key] = deep_merge(merged[key], value)
         else:
             merged[key] = value
     return merged
 
 
-def _load_default_yaml() -> dict[str, Any]:
+def load_default_yaml() -> dict[str, Any]:
     """Load the bundled default.yaml."""
     ref = resources.files("obsidian_export") / "defaults" / "default.yaml"
     return yaml.safe_load(ref.read_text(encoding="utf-8"))
 
 
-def load_default_yaml() -> dict[str, Any]:
-    """Return the bundled default configuration as a raw dict."""
-    return _load_default_yaml()
-
-
-def _resolve_path(raw_path: str, config_dir: Path | None) -> str:
+def resolve_path(raw_path: str, config_dir: Path | None) -> str:
     """Resolve a relative path string against config_dir. Return as string."""
     if raw_path and config_dir and not Path(raw_path).is_absolute():
         return str((config_dir / raw_path).resolve())
     return raw_path
 
 
-def _parse_brand_colors(raw: dict[str, Any]) -> tuple[tuple[str, int, int, int], ...]:
+def parse_brand_colors(raw: dict[str, Any]) -> tuple[tuple[str, int, int, int], ...]:
     """Parse brand_colors dict {name: [r,g,b]} into tuple of (name, r, g, b)."""
     return tuple((name, int(rgb[0]), int(rgb[1]), int(rgb[2])) for name, rgb in raw.items())
 
 
-def _parse_heading_styles(raw: list[dict[str, Any]]) -> tuple[HeadingStyle, ...]:
+def parse_heading_styles(raw: list[dict[str, Any]]) -> tuple[HeadingStyle, ...]:
     """Parse list of heading style dicts into tuple of HeadingStyle."""
     return tuple(
         HeadingStyle(
@@ -68,7 +63,7 @@ def _parse_heading_styles(raw: list[dict[str, Any]]) -> tuple[HeadingStyle, ...]
     )
 
 
-def _parse_title_style(raw: dict[str, Any] | None) -> TitleStyle | None:
+def parse_title_style(raw: dict[str, Any] | None) -> TitleStyle | None:
     """Parse title style dict into TitleStyle, or None if absent."""
     if not raw:
         return None
@@ -82,32 +77,26 @@ def _parse_title_style(raw: dict[str, Any] | None) -> TitleStyle | None:
     )
 
 
-def _parse_unicode_chars(raw: dict[str, str]) -> tuple[tuple[str, str], ...]:
+def parse_unicode_chars(raw: dict[str, str]) -> tuple[tuple[str, str], ...]:
     """Parse unicode_chars dict {char: latex} into tuple of (char, latex)."""
     return tuple((char, latex) for char, latex in raw.items())
 
 
-def _build_mermaid_config(raw: dict[str, Any], config_dir: Path | None) -> MermaidConfig:
+def build_mermaid_config(raw: dict[str, Any], config_dir: Path | None) -> MermaidConfig:
     """Build MermaidConfig, resolving relative paths against config_dir."""
-    mmdc_bin = Path(raw["mmdc_bin"])
-    if config_dir and not mmdc_bin.is_absolute():
-        mmdc_bin = config_dir / mmdc_bin
-
     puppeteer_config_raw = raw.get("puppeteer_config")
     puppeteer_config: Path | None = None
     if puppeteer_config_raw:
-        puppeteer_config = Path(puppeteer_config_raw)
-        if config_dir and not puppeteer_config.is_absolute():
-            puppeteer_config = config_dir / puppeteer_config
+        puppeteer_config = Path(resolve_path(puppeteer_config_raw, config_dir))
 
     return MermaidConfig(
-        mmdc_bin=mmdc_bin,
+        mmdc_bin=Path(resolve_path(raw["mmdc_bin"], config_dir)),
         scale=raw["scale"],
         puppeteer_config=puppeteer_config,
     )
 
 
-def _build_style_config(raw: dict[str, Any], config_dir: Path | None) -> StyleConfig:
+def build_style_config(raw: dict[str, Any], config_dir: Path | None) -> StyleConfig:
     """Build StyleConfig from raw style dict."""
     cc_raw = raw["callout_colors"]
     return StyleConfig(
@@ -135,35 +124,34 @@ def _build_style_config(raw: dict[str, Any], config_dir: Path | None) -> StyleCo
             warning=tuple(cc_raw["warning"]),
             danger=tuple(cc_raw["danger"]),
         ),
-        unicode_chars=_parse_unicode_chars(raw.get("unicode_chars", {})),
-        logo=_resolve_path(raw["logo"], config_dir),
-        style_dir=_resolve_path(raw["style_dir"], config_dir),
-        brand_colors=_parse_brand_colors(raw.get("brand_colors", {}) or {}),
-        heading_styles=_parse_heading_styles(raw.get("heading_styles", []) or []),
-        title_style=_parse_title_style(raw.get("title_style")),
+        unicode_chars=parse_unicode_chars(raw.get("unicode_chars", {})),
+        logo=resolve_path(raw["logo"], config_dir),
+        style_dir=resolve_path(raw["style_dir"], config_dir),
+        brand_colors=parse_brand_colors(raw.get("brand_colors", {}) or {}),
+        heading_styles=parse_heading_styles(raw.get("heading_styles", []) or []),
+        title_style=parse_title_style(raw.get("title_style")),
     )
 
 
-def _build_config(raw: dict[str, Any], config_dir: Path | None) -> ConvertConfig:
+def build_config(raw: dict[str, Any], config_dir: Path | None) -> ConvertConfig:
     """Build ConvertConfig from a raw dict. Resolve relative paths if config_dir given."""
     if config_dir is not None and not config_dir.is_absolute():
         config_dir = config_dir.resolve()
 
     from_format = raw["pandoc"]["from_format"]
-    _validate_from_format(from_format)
+    validate_from_format(from_format)
 
-    style = _build_style_config(raw["style"], config_dir)
-    _validate_pandoc_variable("geometry", style.geometry)
-    _validate_pandoc_variable("fontsize", style.fontsize)
-    _validate_pandoc_variable("linkcolor", style.linkcolor)
-    _validate_pandoc_variable("urlcolor", style.urlcolor)
-    _validate_pandoc_variable("code_fontsize", style.code_fontsize)
-    _validate_pandoc_variable("table_fontsize", style.table_fontsize)
+    style = build_style_config(raw["style"], config_dir)
+    validate_pandoc_variable("geometry", style.geometry)
+    validate_pandoc_variable("fontsize", style.fontsize)
+    validate_pandoc_variable("linkcolor", style.linkcolor)
+    validate_pandoc_variable("urlcolor", style.urlcolor)
+    validate_pandoc_variable("code_fontsize", style.code_fontsize)
+    validate_pandoc_variable("table_fontsize", style.table_fontsize)
 
     return ConvertConfig(
-        mermaid=_build_mermaid_config(raw["mermaid"], config_dir),
+        mermaid=build_mermaid_config(raw["mermaid"], config_dir),
         obsidian=ObsidianConfig(
-            wikilink_strategy=raw["obsidian"]["wikilink_strategy"],
             url_strategy=raw["obsidian"]["url_strategy"],
             url_length_threshold=raw["obsidian"]["url_length_threshold"],
             max_embed_depth=int(raw["obsidian"]["max_embed_depth"]),
@@ -177,7 +165,7 @@ def _build_config(raw: dict[str, Any], config_dir: Path | None) -> ConvertConfig
 
 def default_config() -> ConvertConfig:
     """Return ConvertConfig with all defaults from bundled default.yaml."""
-    return _build_config(_load_default_yaml(), config_dir=None)
+    return build_config(load_default_yaml(), config_dir=None)
 
 
 def load_config(path: Path) -> ConvertConfig:
@@ -189,6 +177,6 @@ def load_config(path: Path) -> ConvertConfig:
     user_raw = yaml.safe_load(path.read_text(encoding="utf-8"))
     if not user_raw:
         user_raw = {}
-    base = _load_default_yaml()
-    merged = _deep_merge(base, user_raw)
-    return _build_config(merged, config_dir=path.parent)
+    base = load_default_yaml()
+    merged = deep_merge(base, user_raw)
+    return build_config(merged, config_dir=path.parent)
