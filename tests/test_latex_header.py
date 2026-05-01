@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from obsidian_export.config import CalloutColors, HeadingStyle, StyleConfig, TitleStyle, default_config
-from obsidian_export.exceptions import UnsafeLatexError
+from obsidian_export.exceptions import ConfigValueError, UnsafeLatexError
 from obsidian_export.pipeline.latex_header import (
     _build_brand_colors_block,
     _build_code_block,
@@ -364,12 +364,12 @@ class TestBuildHeadingStylesBlock:
                 level="section}\\write18{cmd", size="Large", bold=False, sans=False, color="", uppercase=False
             ),
         )
-        with pytest.raises(UnsafeLatexError, match="heading_styles.level"):
+        with pytest.raises(ConfigValueError, match="heading_styles.level"):
             _build_heading_styles_block(styles)
 
     def test_unknown_level_rejected(self) -> None:
         styles = (HeadingStyle(level="write18", size="Large", bold=False, sans=False, color="", uppercase=False),)
-        with pytest.raises(UnsafeLatexError, match="heading_styles.level"):
+        with pytest.raises(ConfigValueError, match="heading_styles.level"):
             _build_heading_styles_block(styles)
 
     def test_dangerous_macro_in_size_rejected(self) -> None:
