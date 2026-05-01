@@ -2,27 +2,35 @@
 
 import re
 from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
 
 from obsidian_export.exceptions import ObsidianExportError
 from obsidian_export.pipeline.path_guards import assert_within_root
 
 
+@dataclass(frozen=True)
+class ImageConversionSpec:
+    """Groups format-specific parameters for image reference conversion."""
+
+    pattern: re.Pattern[str]
+    convert_fn: Callable[[Path, Path], None]
+    out_prefix: str
+    out_ext: str
+    label: str
+    not_found_error: type[ObsidianExportError]
+    pre_filter: Callable[[re.Match[str]], str | None]
+
+
 def convert_image_references(
     body: str,
     tmpdir: Path,
     resource_path: Path | None,
-    pattern: re.Pattern[str],
-    convert_fn: Callable[[Path, Path], None],
-    out_prefix: str,
-    out_ext: str,
-    label: str,
-    not_found_error: type[ObsidianExportError],
-    pre_filter: Callable[[re.Match[str]], str | None],
+    spec: ImageConversionSpec,
 ) -> str:
-    """Scan body for image references matching pattern and convert each via convert_fn.
+    """Scan body for image references matching spec.pattern and convert each.
 
-    pre_filter receives each non-URL match before path resolution. Return a
+    spec.pre_filter receives each non-URL match before path resolution. Return a
     string to use as the replacement (skipping conversion), or None to proceed
     with the standard resolve-guard-convert flow.
     """
@@ -36,7 +44,7 @@ def convert_image_references(
         if img_raw.startswith(("http://", "https://")):
             return m.group(0)
 
-        filtered = pre_filter(m)
+        filtered = spec.pre_filter(m)
         if filtered is not None:
             return filtered
 
@@ -46,16 +54,16 @@ def convert_image_references(
             img_path = resource_path / img_path
 
         if resource_path is not None:
-            assert_within_root(img_path, resource_path, label)
+            assert_within_root(img_path, resource_path, spec.label)
 
         if not img_path.exists():
-            raise not_found_error(f"{label} file not found: {img_path}")
+            raise spec.not_found_error(f"{spec.label} file not found: {img_path}")
 
         counter += 1
-        out_path = tmpdir / f"{out_prefix}{counter}{out_ext}"
+        out_path = tmpdir / f"{spec.out_prefix}{counter}{spec.out_ext}"
 
-        convert_fn(img_path, out_path)
+        spec.convert_fn(img_path, out_path)
 
         return f"![{alt_text}]({out_path})"
 
-    return pattern.sub(replace_match, body)
+    return spec.pattern.sub(replace_match, body)
