@@ -5,7 +5,7 @@ import subprocess
 from pathlib import Path
 
 from obsidian_export.exceptions import SVGConversionError
-from obsidian_export.pipeline.image_convert import convert_image_references
+from obsidian_export.pipeline.image_convert import ImageConversionSpec, convert_image_references
 
 _IMG_REF_RE = re.compile(r"!\[([^\]]*)\]\(([^)]+\.svg)\)")
 
@@ -36,18 +36,16 @@ def _convert_svg_images(body: str, tmpdir: Path, resource_path: Path | None, rsv
             stderr = exc.stderr.decode(errors="replace") if exc.stderr else "(no stderr)"
             raise SVGConversionError(f"rsvg-convert failed for {src} (exit {exc.returncode}): {stderr}") from exc
 
-    return convert_image_references(
-        body,
-        tmpdir,
-        resource_path,
-        _IMG_REF_RE,
-        _do_convert,
-        "svg_",
-        file_ext,
-        "SVG",
-        SVGConversionError,
-        lambda _m: None,
+    spec = ImageConversionSpec(
+        pattern=_IMG_REF_RE,
+        convert_fn=_do_convert,
+        out_prefix="svg_",
+        out_ext=file_ext,
+        label="SVG",
+        not_found_error=SVGConversionError,
+        pre_filter=lambda _m: None,
     )
+    return convert_image_references(body, tmpdir, resource_path, spec)
 
 
 def convert_svg_images(body: str, tmpdir: Path, resource_path: Path | None) -> str:
