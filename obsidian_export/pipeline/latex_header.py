@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 
 from obsidian_export.config import HeadingStyle, StyleConfig, TitleStyle
-from obsidian_export.exceptions import UnsafeLatexError
+from obsidian_export.exceptions import ConfigValueError, UnsafeLatexError
 
 _DANGEROUS_LATEX_RE = re.compile(
     r"\\(?:input|include|write\d*|immediate|openin|openout|read|closein|closeout"
@@ -171,7 +171,7 @@ def _build_heading_styles_block(heading_styles: tuple[HeadingStyle, ...]) -> str
             msg = (
                 f"Config field 'heading_styles.level' must be one of {sorted(_VALID_HEADING_LEVELS)}; got '{h.level}'."
             )
-            raise UnsafeLatexError(msg)
+            raise ConfigValueError(msg)
         _validate_latex_value(f"\\{h.size}", "heading_styles.size")
         parts = ["\\normalfont"]
         parts.append(f"\\{h.size}")
