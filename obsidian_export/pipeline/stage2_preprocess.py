@@ -110,7 +110,8 @@ def process_urls(text: str, strategy: str, threshold: int) -> str:
         url = m.group(1)
         if strategy == "footnote_all" or (strategy == "footnote_long" and len(url) > threshold):
             # Pandoc footnote syntax: [^N] — but inline footnotes are cleaner
-            return f"[link]({url})[^url-{abs(hash(url)) % 100000}]\n\n[^url-{abs(hash(url)) % 100000}]: <{url}>"
+            footnote_id = abs(hash(url)) % 100000
+            return f"[link]({url})[^url-{footnote_id}]\n\n[^url-{footnote_id}]: <{url}>"
         return m.group(0)
 
     if strategy == "strip":
