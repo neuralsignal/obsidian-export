@@ -8,10 +8,10 @@ from conftest import VALID_DATA, write_config
 from obsidian_export.config import (
     HeadingStyle,
     TitleStyle,
-    deep_merge,
     default_config,
     load_config,
 )
+from obsidian_export.config.loader import deep_merge
 
 # ── deep merge ──────────────────────────────────────────────────────────────
 

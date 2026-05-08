@@ -17,16 +17,18 @@ from obsidian_export.config import (
     StyleConfig,
     TitleStyle,
     build_config,
-    deep_merge,
     default_config,
     load_config,
+    validate_from_format,
+    validate_pandoc_variable,
+)
+from obsidian_export.config.loader import (
+    deep_merge,
     parse_brand_colors,
     parse_heading_styles,
     parse_title_style,
     parse_unicode_chars,
     resolve_path,
-    validate_from_format,
-    validate_pandoc_variable,
 )
 from obsidian_export.exceptions import ConfigValueError
 
