@@ -7,6 +7,14 @@
 * bump Pillow pin to `>=12.1.1,<13` to fix CVE-2026-25990 (PSD out-of-bounds write); previous pin `>=10.0,<12` blocked the fix ([#141](https://github.com/neuralsignal/obsidian-export/issues/141))
 * validate `heading_styles.size`, `title_style.size`, and `code_fontsize` against dangerous LaTeX macros and restrict `heading_styles.level` to a sectioning-command allowlist (`section`, `subsection`, `subsubsection`, `paragraph`, `subparagraph`) ([#148](https://github.com/neuralsignal/obsidian-export/issues/148))
 
+## [0.5.4](https://github.com/neuralsignal/obsidian-export/compare/v0.5.3...v0.5.4) (2026-05-11)
+
+
+### Bug Fixes
+
+* extract duplicated hash expression in process_urls ([#178](https://github.com/neuralsignal/obsidian-export/issues/178)) ([5389e81](https://github.com/neuralsignal/obsidian-export/commit/5389e81d1a33e55bce9b471b4a0074f52185a705))
+* raise ConfigValueError instead of UnsafeLatexError for invalid heading level ([#174](https://github.com/neuralsignal/obsidian-export/issues/174)) ([7fc138a](https://github.com/neuralsignal/obsidian-export/commit/7fc138a3cad5a00e2a3d1399b39657ee1d774b6d))
+
 ## [0.5.3](https://github.com/neuralsignal/obsidian-export/compare/v0.5.2...v0.5.3) (2026-04-28)
 
 
