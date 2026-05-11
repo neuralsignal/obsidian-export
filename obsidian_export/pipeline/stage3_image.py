@@ -14,7 +14,7 @@ from pathlib import Path
 from PIL import Image
 
 from obsidian_export.exceptions import ImageConversionError
-from obsidian_export.pipeline.image_convert import convert_image_references
+from obsidian_export.pipeline.image_convert import ImageConversionSpec, convert_image_references
 from obsidian_export.pipeline.path_guards import assert_within_root
 
 PDF_NATIVE_EXTENSIONS = frozenset({".png", ".jpg", ".jpeg", ".pdf"})
@@ -67,18 +67,16 @@ def convert_images(
                 f"Failed to convert {src} to PNG: {exc}. Ensure Pillow supports the {ext} format."
             ) from exc
 
-    return convert_image_references(
-        body,
-        tmpdir,
-        resource_path,
-        _IMG_REF_RE,
-        _do_convert,
-        "img_",
-        ".png",
-        "Image",
-        ImageConversionError,
-        _pre_filter,
+    spec = ImageConversionSpec(
+        pattern=_IMG_REF_RE,
+        convert_fn=_do_convert,
+        out_prefix="img_",
+        out_ext=".png",
+        label="Image",
+        not_found_error=ImageConversionError,
+        pre_filter=_pre_filter,
     )
+    return convert_image_references(body, tmpdir, resource_path, spec)
 
 
 def convert_images_for_pdf(
