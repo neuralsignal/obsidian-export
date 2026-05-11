@@ -8,6 +8,8 @@ from hypothesis import strategies as st
 from obsidian_export.config import (
     HeadingStyle,
     TitleStyle,
+)
+from obsidian_export.config.loader import (
     parse_brand_colors,
     parse_heading_styles,
     parse_title_style,
