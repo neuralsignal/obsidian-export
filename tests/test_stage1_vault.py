@@ -367,6 +367,37 @@ class TestResolveImageEmbed:
         with pytest.raises(PathTraversalError):
             _resolve_image_embed("../secret.png", vault, vault.resolve())
 
+    def test_glob_star_rejected(self, tmp_path: Path) -> None:
+        """Glob wildcard in embed target must not trigger rglob search."""
+        img = tmp_path / "secret.png"
+        img.write_bytes(b"\x89PNG")
+        result = _resolve_image_embed("*.png", tmp_path, tmp_path.resolve())
+        assert "![*.png](" in result
+        assert str(img) not in result
+
+    def test_glob_question_mark_rejected(self, tmp_path: Path) -> None:
+        img = tmp_path / "a.png"
+        img.write_bytes(b"\x89PNG")
+        result = _resolve_image_embed("?.png", tmp_path, tmp_path.resolve())
+        assert "![?.png](" in result
+        assert str(img) not in result
+
+    def test_glob_brackets_rejected(self, tmp_path: Path) -> None:
+        img = tmp_path / "a.png"
+        img.write_bytes(b"\x89PNG")
+        result = _resolve_image_embed("[a-z].png", tmp_path, tmp_path.resolve())
+        assert "![[a-z].png](" in result
+        assert str(img) not in result
+
+    def test_glob_double_star_rejected(self, tmp_path: Path) -> None:
+        subdir = tmp_path / "deep" / "dir"
+        subdir.mkdir(parents=True)
+        img = subdir / "photo.png"
+        img.write_bytes(b"\x89PNG")
+        result = _resolve_image_embed("**/*.png", tmp_path, tmp_path.resolve())
+        assert "![**/*.png](" in result
+        assert str(img) not in result
+
 
 # ── _resolve_note_path ──────────────────────────────────────────────────────
 
