@@ -20,6 +20,7 @@ _SECTION_EMBED_RE = re.compile(r"^([^#]+)#(.+)$")
 _WIKILINK_PIPE_RE = re.compile(r"\[\[([^\]|]+)\|([^\]]+)\]\]")
 _WIKILINK_BARE_RE = re.compile(r"\[\[([^\]]+)\]\]")
 _RELATIONS_RE = re.compile(r"\n## Relations\b.*", re.DOTALL | re.IGNORECASE)
+_GLOB_CHARS_RE = re.compile(r"[*?\[\]]")
 
 IMAGE_EXTENSIONS = frozenset(
     {
@@ -148,6 +149,9 @@ def _resolve_image_embed(raw: str, vault_root: Path, vault_resolved: Path) -> st
         raise PathTraversalError(f"Embed path escapes vault root: {raw!r} resolved to {img_path}")
     if img_path.exists():
         return f"![]({img_path})"
+    if _GLOB_CHARS_RE.search(raw):
+        _log.warning("Embed target contains glob metacharacters, skipping vault search: %r", raw)
+        return f"![{raw}]({vault_root / raw})"
     # Obsidian resolves by filename anywhere in vault — search subdirs
     matches = list(vault_root.rglob(raw))
     if matches:
