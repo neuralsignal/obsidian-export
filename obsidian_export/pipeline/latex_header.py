@@ -135,6 +135,7 @@ def _build_unicode_char_block(unicode_chars: tuple[tuple[str, str], ...]) -> str
 
 
 def _build_font_block(mainfont: str, sansfont: str, monofont: str) -> str:
+    """Generate \\setmainfont/\\setsansfont/\\setmonofont lines for non-empty font settings."""
     lines = []
     if mainfont:
         lines.append(f"\\setmainfont{{{_escape_latex(mainfont)}}}")
@@ -146,6 +147,7 @@ def _build_font_block(mainfont: str, sansfont: str, monofont: str) -> str:
 
 
 def _build_line_spacing_block(line_spacing: float) -> str:
+    """Generate setspace package usage and \\setstretch call, or empty string if spacing is 1.0."""
     if line_spacing == 1.0:
         return ""
     return f"\\usepackage{{setspace}}\n\\setstretch{{{line_spacing}}}"
@@ -239,6 +241,7 @@ def _build_header_footer_block(
     footer_center: str,
     footer_right: str,
 ) -> str:
+    """Generate fancyhdr package setup with configured header/footer fields."""
     for field_name, value in (
         ("header_left", header_left),
         ("header_right", header_right),
