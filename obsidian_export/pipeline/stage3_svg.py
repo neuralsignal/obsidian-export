@@ -7,7 +7,7 @@ from pathlib import Path
 from obsidian_export.exceptions import SVGConversionError
 from obsidian_export.pipeline.image_convert import ImageConversionSpec, convert_image_references
 
-_IMG_REF_RE = re.compile(r"!\[([^\]]*)\]\(([^)]+\.svg)\)")
+_SVG_REF_RE = re.compile(r"!\[([^\]]*)\]\(([^)]+\.svg)\)")
 
 
 def _convert_svg_images(body: str, tmpdir: Path, resource_path: Path | None, rsvg_format: str, file_ext: str) -> str:
@@ -37,7 +37,7 @@ def _convert_svg_images(body: str, tmpdir: Path, resource_path: Path | None, rsv
             raise SVGConversionError(f"rsvg-convert failed for {src} (exit {exc.returncode}): {stderr}") from exc
 
     spec = ImageConversionSpec(
-        pattern=_IMG_REF_RE,
+        pattern=_SVG_REF_RE,
         convert_fn=_do_convert,
         out_prefix="svg_",
         out_ext=file_ext,
