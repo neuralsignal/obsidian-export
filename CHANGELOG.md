@@ -4,6 +4,7 @@
 
 ### Security
 
+* pin urllib3 `>=2.7.0,<3` to fix CVE-2026-44431 (sensitive headers forwarded on cross-origin proxy redirects) ([#193](https://github.com/neuralsignal/obsidian-export/issues/193))
 * bump Pillow pin to `>=12.1.1,<13` to fix CVE-2026-25990 (PSD out-of-bounds write); previous pin `>=10.0,<12` blocked the fix ([#141](https://github.com/neuralsignal/obsidian-export/issues/141))
 * validate `heading_styles.size`, `title_style.size`, and `code_fontsize` against dangerous LaTeX macros and restrict `heading_styles.level` to a sectioning-command allowlist (`section`, `subsection`, `subsubsection`, `paragraph`, `subparagraph`) ([#148](https://github.com/neuralsignal/obsidian-export/issues/148))
 
