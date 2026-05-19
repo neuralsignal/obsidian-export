@@ -11,7 +11,7 @@ from hypothesis import strategies as st
 
 from obsidian_export.exceptions import SVGConversionError
 from obsidian_export.pipeline.stage3_svg import (
-    _IMG_REF_RE,
+    _SVG_REF_RE,
     convert_svg_images,
     convert_svg_images_to_png,
 )
@@ -172,22 +172,22 @@ class TestSubprocessErrors:
 
 
 class TestImgRefRegex:
-    """Property-based tests for the _IMG_REF_RE regex pattern."""
+    """Property-based tests for the _SVG_REF_RE regex pattern."""
 
     def test_concrete_match(self):
-        m = _IMG_REF_RE.search("![alt](path/to/file.svg)")
+        m = _SVG_REF_RE.search("![alt](path/to/file.svg)")
         assert m is not None
         assert m.group(1) == "alt"
         assert m.group(2) == "path/to/file.svg"
 
     def test_concrete_no_match_png(self):
-        assert _IMG_REF_RE.search("![alt](image.png)") is None
+        assert _SVG_REF_RE.search("![alt](image.png)") is None
 
     @given(alt=st.text(alphabet=st.characters(blacklist_characters="]"), min_size=0, max_size=30))
     def test_any_alt_text_matches(self, alt: str):
         """Any alt text (without ']') in an SVG image ref is matched."""
         text = f"![{alt}](diagram.svg)"
-        m = _IMG_REF_RE.search(text)
+        m = _SVG_REF_RE.search(text)
         assert m is not None
         assert m.group(1) == alt
         assert m.group(2) == "diagram.svg"
@@ -204,7 +204,7 @@ class TestImgRefRegex:
         """Any local .svg file path is captured by the regex."""
         path = "/".join([*dirs, f"{name}.svg"])
         text = f"![img]({path})"
-        m = _IMG_REF_RE.search(text)
+        m = _SVG_REF_RE.search(text)
         assert m is not None
         assert m.group(2) == path
 
@@ -212,7 +212,7 @@ class TestImgRefRegex:
     def test_non_svg_extensions_do_not_match(self, ext: str) -> None:
         """Non-.svg extensions are not matched by the regex."""
         text = f"![alt](image{ext})"
-        assert _IMG_REF_RE.search(text) is None
+        assert _SVG_REF_RE.search(text) is None
 
     @given(
         scheme=st.sampled_from(["http://", "https://"]),
@@ -221,7 +221,7 @@ class TestImgRefRegex:
     def test_url_svgs_still_match_regex(self, scheme: str, domain: str) -> None:
         """URLs with .svg are matched by the regex (skipping is done in the function, not the regex)."""
         text = f"![logo]({scheme}{domain}/icon.svg)"
-        m = _IMG_REF_RE.search(text)
+        m = _SVG_REF_RE.search(text)
         assert m is not None
 
     @given(
@@ -229,4 +229,4 @@ class TestImgRefRegex:
     )
     def test_text_without_image_syntax_never_matches(self, body: str) -> None:
         """Plain text without markdown image syntax never triggers the regex."""
-        assert _IMG_REF_RE.search(body) is None
+        assert _SVG_REF_RE.search(body) is None
