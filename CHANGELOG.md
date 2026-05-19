@@ -7,6 +7,14 @@
 * bump Pillow pin to `>=12.1.1,<13` to fix CVE-2026-25990 (PSD out-of-bounds write); previous pin `>=10.0,<12` blocked the fix ([#141](https://github.com/neuralsignal/obsidian-export/issues/141))
 * validate `heading_styles.size`, `title_style.size`, and `code_fontsize` against dangerous LaTeX macros and restrict `heading_styles.level` to a sectioning-command allowlist (`section`, `subsection`, `subsubsection`, `paragraph`, `subparagraph`) ([#148](https://github.com/neuralsignal/obsidian-export/issues/148))
 
+## [0.5.5](https://github.com/neuralsignal/obsidian-export/compare/v0.5.4...v0.5.5) (2026-05-19)
+
+
+### Bug Fixes
+
+* reject glob metacharacters in image embed targets ([#186](https://github.com/neuralsignal/obsidian-export/issues/186)) ([de298c8](https://github.com/neuralsignal/obsidian-export/commit/de298c8a073a320c38ebe8cdb386eaca0d62e225))
+* rename _IMG_REF_RE to _SVG_REF_RE in stage3_svg.py ([#190](https://github.com/neuralsignal/obsidian-export/issues/190)) ([c21bffa](https://github.com/neuralsignal/obsidian-export/commit/c21bffa88f7d770fe4f3bacea1a466084bf09566))
+
 ## [0.5.4](https://github.com/neuralsignal/obsidian-export/compare/v0.5.3...v0.5.4) (2026-05-11)
 
 
