@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+* add `style.greek_font` config option: routes Greek-script glyphs to a covering font via `ucharclasses` so Greek text renders even when the main/sans fonts (e.g. Merriweather, Montserrat) lack Greek coverage. Empty value (the default) is a no-op, leaving Latin-only documents unchanged.
+
 ### Security
 
 * pin urllib3 `>=2.7.0,<3` to fix CVE-2026-44431 (sensitive headers forwarded on cross-origin proxy redirects) ([#193](https://github.com/neuralsignal/obsidian-export/issues/193))

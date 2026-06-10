@@ -59,6 +59,7 @@ class StyleConfig:
     mainfont: str
     sansfont: str
     monofont: str
+    greek_font: str
     linkcolor: str
     urlcolor: str
     line_spacing: float

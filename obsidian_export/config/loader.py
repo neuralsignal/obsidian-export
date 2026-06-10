@@ -106,6 +106,7 @@ def build_style_config(raw: dict[str, Any], config_dir: Path | None) -> StyleCon
         mainfont=raw["mainfont"],
         sansfont=raw["sansfont"],
         monofont=raw["monofont"],
+        greek_font=raw["greek_font"],
         linkcolor=raw["linkcolor"],
         urlcolor=raw["urlcolor"],
         line_spacing=float(raw["line_spacing"]),
