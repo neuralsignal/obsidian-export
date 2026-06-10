@@ -28,6 +28,7 @@ VALID_DATA = {
         "mainfont": "",
         "sansfont": "",
         "monofont": "",
+        "greek_font": "",
         "linkcolor": "NavyBlue",
         "urlcolor": "NavyBlue",
         "line_spacing": 1.0,

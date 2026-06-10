@@ -126,6 +126,7 @@ style:
   mainfont: ""                        # Main font (XeLaTeX)
   sansfont: ""                        # Sans font
   monofont: ""                        # Mono font
+  greek_font: ""                      # Fallback font for Greek glyphs (e.g. "DejaVu Serif"); empty disables
   linkcolor: "NavyBlue"              # Internal link color
   urlcolor: "NavyBlue"               # URL color
   line_spacing: 1.0                  # Line spacing multiplier

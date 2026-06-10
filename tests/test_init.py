@@ -25,6 +25,7 @@ def _make_style(
         mainfont="serif",
         sansfont="sans",
         monofont="mono",
+        greek_font="",
         linkcolor="blue",
         urlcolor="blue",
         line_spacing=1.0,

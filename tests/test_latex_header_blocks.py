@@ -7,6 +7,7 @@ from obsidian_export.pipeline.latex_header import (
     _build_brand_colors_block,
     _build_code_block,
     _build_font_block,
+    _build_greek_fallback_block,
     _build_header_footer_block,
     _build_line_spacing_block,
     _build_unicode_char_block,
@@ -156,6 +157,25 @@ class TestBuildFontBlock:
     def test_injection_in_monofont_escaped(self) -> None:
         result = _build_font_block("", "", "font$hack")
         assert "\\$" in result
+
+
+class TestBuildGreekFallbackBlock:
+    def test_empty_returns_empty(self) -> None:
+        assert _build_greek_fallback_block("") == ""
+
+    def test_loads_ucharclasses_and_defines_font(self) -> None:
+        result = _build_greek_fallback_block("DejaVu Serif")
+        assert "\\usepackage{ucharclasses}" in result
+        assert "\\newfontfamily\\greekfallbackfont{DejaVu Serif}" in result
+
+    def test_sets_greek_transition(self) -> None:
+        result = _build_greek_fallback_block("DejaVu Serif")
+        assert "\\setTransitionsForGreek{\\greekfallbackfont}{\\rmfamily}" in result
+
+    def test_injection_in_font_name_escaped(self) -> None:
+        result = _build_greek_fallback_block("}\\write18{rm -rf /}")
+        assert "\\write18" not in result
+        assert "\\textbackslash" in result
 
 
 class TestBuildCodeBlock:
