@@ -37,6 +37,7 @@ def render_header(style: StyleConfig, template_path: Path, title: str) -> str:
 
     unicode_char_block = _build_unicode_char_block(style.unicode_chars)
     font_block = _build_font_block(style.mainfont, style.sansfont, style.monofont)
+    greek_fallback_block = _build_greek_fallback_block(style.greek_font)
     line_spacing_block = _build_line_spacing_block(style.line_spacing)
     header_footer_block = _build_header_footer_block(
         header_left, header_right, footer_left, footer_center, footer_right
@@ -63,6 +64,7 @@ def render_header(style: StyleConfig, template_path: Path, title: str) -> str:
         danger_b=cc.danger[2],
         unicode_char_block=unicode_char_block,
         font_block=font_block,
+        greek_fallback_block=greek_fallback_block,
         line_spacing_block=line_spacing_block,
         header_footer_block=header_footer_block,
         brand_colors_block=brand_colors_block,
@@ -144,6 +146,25 @@ def _build_font_block(mainfont: str, sansfont: str, monofont: str) -> str:
     if monofont:
         lines.append(f"\\setmonofont{{{_escape_latex(monofont)}}}")
     return "\n".join(lines)
+
+
+def _build_greek_fallback_block(greek_font: str) -> str:
+    """Route Greek-script glyphs to a covering font via ucharclasses.
+
+    XeTeX performs no cross-font fallback: when the main and sans fonts lack
+    Greek coverage, Greek characters are dropped silently. ucharclasses switches
+    to greek_font on entering the Greek Unicode block and restores the roman
+    family on exit. An empty greek_font yields no block, so Latin-only documents
+    are unaffected.
+    """
+    if not greek_font:
+        return ""
+    escaped = _escape_latex(greek_font)
+    return (
+        "\\usepackage{ucharclasses}\n"
+        f"\\newfontfamily\\greekfallbackfont{{{escaped}}}\n"
+        "\\setTransitionsForGreek{\\greekfallbackfont}{\\rmfamily}"
+    )
 
 
 def _build_line_spacing_block(line_spacing: float) -> str:
