@@ -14,6 +14,19 @@
 * pin urllib3 `>=2.7.0,<3` to fix CVE-2026-44432 (decompression resource exhaustion in streaming API) ([#194](https://github.com/neuralsignal/obsidian-export/issues/194))
 * pin idna `>=3.15,<4` to fix CVE-2026-45409 (ReDoS/DoS in `idna.encode()` via `valid_contexto`) ([#205](https://github.com/neuralsignal/obsidian-export/issues/205))
 
+## [0.6.0](https://github.com/neuralsignal/obsidian-export/compare/v0.5.5...v0.6.0) (2026-06-10)
+
+
+### Features
+
+* add style.greek_font config for Greek glyph fallback ([4fb7863](https://github.com/neuralsignal/obsidian-export/commit/4fb7863092b53bda233472290d19a316c298258e))
+* add style.greek_font config for Greek glyph fallback ([38860f0](https://github.com/neuralsignal/obsidian-export/commit/38860f02fb7c84b699d7702d213c26db7ac8673b))
+
+
+### Bug Fixes
+
+* upgrade pymdown-extensions to &gt;=10.21.3 for CVE-2026-46338 ([#206](https://github.com/neuralsignal/obsidian-export/issues/206)) ([be2dd90](https://github.com/neuralsignal/obsidian-export/commit/be2dd906c1d24fb6a400f17f4142b75723d06081))
+
 ## [0.5.5](https://github.com/neuralsignal/obsidian-export/compare/v0.5.4...v0.5.5) (2026-05-19)
 
 
