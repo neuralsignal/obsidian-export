@@ -95,19 +95,20 @@ def run(
 
     # Stage 3: Mermaid diagram rendering
     with tempfile.TemporaryDirectory() as tmpdir:
-        body = render_mermaid_blocks(body, config.mermaid, Path(tmpdir))
+        tmp = Path(tmpdir)
+        body = render_mermaid_blocks(body, config.mermaid, tmp)
 
         # Stage 3b: SVG conversion for format compatibility
         if output_format == "pdf":
-            body = convert_svg_images(body, Path(tmpdir), resource_path=input_path.parent)
+            body = convert_svg_images(body, tmp, resource_path=vault_root)
         else:
-            body = convert_svg_images_to_png(body, Path(tmpdir), resource_path=input_path.parent)
+            body = convert_svg_images_to_png(body, tmp, resource_path=vault_root)
 
         # Stage 3c: Non-SVG image conversion for format compatibility
         if output_format == "pdf":
-            body = convert_images_for_pdf(body, Path(tmpdir), resource_path=input_path.parent)
+            body = convert_images_for_pdf(body, tmp, resource_path=vault_root)
         else:
-            body = convert_images_for_docx(body, Path(tmpdir), resource_path=input_path.parent)
+            body = convert_images_for_docx(body, tmp, resource_path=vault_root)
 
         # Stage 4: Pandoc conversion
         style_dir = _resolve_style_dir(config.style)
@@ -120,7 +121,7 @@ def run(
             style_config=config.style,
             filters_dir=filters_dir,
             output_path=output_path,
-            resource_path=input_path.parent,
+            resource_path=vault_root,
         )
 
         if output_format == "pdf":
