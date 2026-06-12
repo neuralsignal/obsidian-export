@@ -56,6 +56,21 @@ def validate_from_format(value: str) -> None:
             )
 
 
+_VALID_HEADING_LEVELS: frozenset[str] = frozenset(
+    {"section", "subsection", "subsubsection", "paragraph", "subparagraph"}
+)
+
+
+def validate_heading_level(level: str) -> None:
+    """Validate a heading level against the allowlist of LaTeX sectioning commands.
+
+    Raises ConfigValueError if the level is not recognised.
+    """
+    if level not in _VALID_HEADING_LEVELS:
+        msg = f"Config field 'heading_styles.level' must be one of {sorted(_VALID_HEADING_LEVELS)}; got '{level}'."
+        raise ConfigValueError(msg)
+
+
 _VALID_URL_STRATEGIES: frozenset[str] = frozenset({"keep", "strip", "footnote_all", "footnote_long"})
 
 

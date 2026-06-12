@@ -16,7 +16,12 @@ from obsidian_export.config.models import (
     StyleConfig,
     TitleStyle,
 )
-from obsidian_export.config.validators import validate_from_format, validate_pandoc_variable, validate_url_strategy
+from obsidian_export.config.validators import (
+    validate_from_format,
+    validate_heading_level,
+    validate_pandoc_variable,
+    validate_url_strategy,
+)
 
 
 def deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
@@ -50,6 +55,8 @@ def parse_brand_colors(raw: dict[str, Any]) -> tuple[tuple[str, int, int, int], 
 
 def parse_heading_styles(raw: list[dict[str, Any]]) -> tuple[HeadingStyle, ...]:
     """Parse list of heading style dicts into tuple of HeadingStyle."""
+    for h in raw:
+        validate_heading_level(h["level"])
     return tuple(
         HeadingStyle(
             level=h["level"],

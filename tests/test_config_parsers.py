@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
@@ -16,6 +17,7 @@ from obsidian_export.config.loader import (
     parse_unicode_chars,
     resolve_path,
 )
+from obsidian_export.exceptions import ConfigValueError
 
 # ── resolve_path ──────────────────────────────────────────────────────────
 
@@ -79,15 +81,25 @@ def testparse_heading_styles_defaults_optional_fields() -> None:
 
 
 def testparse_heading_styles_all_fields() -> None:
-    raw = [{"level": "sub", "size": "small", "bold": True, "sans": True, "color": "red", "uppercase": True}]
+    raw = [{"level": "subsection", "size": "small", "bold": True, "sans": True, "color": "red", "uppercase": True}]
     result = parse_heading_styles(raw)
     assert result[0].bold is True
     assert result[0].uppercase is True
     assert result[0].color == "red"
 
 
+def testparse_heading_styles_invalid_level_rejected() -> None:
+    with pytest.raises(ConfigValueError, match="heading_styles.level"):
+        parse_heading_styles([{"level": "section}\\write18{cmd", "size": "Large"}])
+
+
+def testparse_heading_styles_unknown_level_rejected() -> None:
+    with pytest.raises(ConfigValueError, match="heading_styles.level"):
+        parse_heading_styles([{"level": "write18", "size": "Large"}])
+
+
 @given(
-    level=st.text(min_size=1, max_size=20),
+    level=st.sampled_from(["section", "subsection", "subsubsection", "paragraph", "subparagraph"]),
     size=st.text(min_size=1, max_size=20),
     bold=st.booleans(),
     sans=st.booleans(),
