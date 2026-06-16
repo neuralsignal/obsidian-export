@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 
 from obsidian_export.config import HeadingStyle, StyleConfig, TitleStyle
-from obsidian_export.exceptions import ConfigValueError, UnsafeLatexError
+from obsidian_export.exceptions import UnsafeLatexError
 
 _DANGEROUS_LATEX_RE = re.compile(
     r"\\(?:input|include|write\d*|immediate|openin|openout|read|closein|closeout"
@@ -12,8 +12,6 @@ _DANGEROUS_LATEX_RE = re.compile(
     r"|luaexec|luadirect)(?![a-zA-Z])",
     re.IGNORECASE,
 )
-
-_VALID_HEADING_LEVELS = frozenset({"section", "subsection", "subsubsection", "paragraph", "subparagraph"})
 
 
 def render_header(style: StyleConfig, template_path: Path, title: str) -> str:
@@ -190,11 +188,6 @@ def _build_heading_styles_block(heading_styles: tuple[HeadingStyle, ...]) -> str
         return ""
     lines = ["\\usepackage{titlesec}"]
     for h in heading_styles:
-        if h.level not in _VALID_HEADING_LEVELS:
-            msg = (
-                f"Config field 'heading_styles.level' must be one of {sorted(_VALID_HEADING_LEVELS)}; got '{h.level}'."
-            )
-            raise ConfigValueError(msg)
         _validate_latex_value(f"\\{h.size}", "heading_styles.size")
         parts = ["\\normalfont"]
         parts.append(f"\\{h.size}")
