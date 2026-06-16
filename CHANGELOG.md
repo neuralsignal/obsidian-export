@@ -14,6 +14,13 @@
 * pin urllib3 `>=2.7.0,<3` to fix CVE-2026-44432 (decompression resource exhaustion in streaming API) ([#194](https://github.com/neuralsignal/obsidian-export/issues/194))
 * pin idna `>=3.15,<4` to fix CVE-2026-45409 (ReDoS/DoS in `idna.encode()` via `valid_contexto`) ([#205](https://github.com/neuralsignal/obsidian-export/issues/205))
 
+## [0.6.1](https://github.com/neuralsignal/obsidian-export/compare/v0.6.0...v0.6.1) (2026-06-16)
+
+
+### Bug Fixes
+
+* move heading level validation from render time to config load time ([#220](https://github.com/neuralsignal/obsidian-export/issues/220)) ([f10cd51](https://github.com/neuralsignal/obsidian-export/commit/f10cd513e35bb28a15e4f79c61e7238ccf1b1a57))
+
 ## [0.6.0](https://github.com/neuralsignal/obsidian-export/compare/v0.5.5...v0.6.0) (2026-06-10)
 
 
