@@ -13,7 +13,31 @@ from obsidian_export.config import (
     validate_pandoc_variable,
     validate_url_strategy,
 )
+from obsidian_export.config.validators import _validate_pandoc_extensions
 from obsidian_export.exceptions import ConfigValueError
+
+# ── _validate_pandoc_extensions ─────────────────────────────────────────
+
+
+class TestValidatePandocExtensions:
+    def test_valid_extensions_accepted(self) -> None:
+        _validate_pandoc_extensions("+footnotes-smart+pipe_tables", "gfm+footnotes-smart+pipe_tables")
+
+    def test_disabling_dangerous_extension_accepted(self) -> None:
+        _validate_pandoc_extensions("-raw_html", "gfm-raw_html")
+
+    def test_dangerous_extension_rejected(self) -> None:
+        with pytest.raises(ConfigValueError, match="Dangerous pandoc extension.*raw_html"):
+            _validate_pandoc_extensions("+raw_html", "gfm+raw_html")
+
+    def test_malformed_extension_rejected(self) -> None:
+        with pytest.raises(ConfigValueError, match="Malformed pandoc extension"):
+            _validate_pandoc_extensions("+123bad", "gfm+123bad")
+
+    @given(ext=st.from_regex(r"^[a-z][a-z0-9_]*$", fullmatch=True))
+    def test_valid_extension_names_accepted_with_minus(self, ext: str) -> None:
+        _validate_pandoc_extensions(f"-{ext}", f"gfm-{ext}")
+
 
 # ── validate_from_format ────────────────────────────────────────────────
 

@@ -28,6 +28,23 @@ _PANDOC_EXTENSION_RE: re.Pattern[str] = re.compile(r"^[a-z][a-z0-9_]*$")
 _PANDOC_VARIABLE_RE: re.Pattern[str] = re.compile(r"^[a-zA-Z0-9,=._\- ]+$")
 
 
+def _validate_pandoc_extensions(ext_string: str, from_format: str) -> None:
+    """Validate the extension portion of a pandoc from_format string.
+
+    Raises ConfigValueError if any extension name is malformed or a
+    dangerous extension is enabled.
+    """
+    for match in re.finditer(r"([+-])([^+-]+)", ext_string):
+        sign, ext_name = match.group(1), match.group(2)
+        if not _PANDOC_EXTENSION_RE.match(ext_name):
+            raise ConfigValueError(f"Malformed pandoc extension name: {ext_name!r} in from_format {from_format!r}")
+        if sign == "+" and ext_name in _DANGEROUS_EXTENSIONS:
+            raise ConfigValueError(
+                f"Dangerous pandoc extension enabled: +{ext_name} in from_format {from_format!r}. "
+                f"Blocked extensions: {sorted(_DANGEROUS_EXTENSIONS)}"
+            )
+
+
 def validate_from_format(value: str) -> None:
     """Validate pandoc from_format against safe base formats and extensions.
 
@@ -41,19 +58,8 @@ def validate_from_format(value: str) -> None:
             f"Unsupported pandoc base format: {base_format!r}. Allowed: {sorted(_SAFE_PANDOC_FORMATS)}"
         )
 
-    if len(parts) < 2:
-        return
-
-    ext_string = parts[1]
-    for match in re.finditer(r"([+-])([^+-]+)", ext_string):
-        sign, ext_name = match.group(1), match.group(2)
-        if not _PANDOC_EXTENSION_RE.match(ext_name):
-            raise ConfigValueError(f"Malformed pandoc extension name: {ext_name!r} in from_format {value!r}")
-        if sign == "+" and ext_name in _DANGEROUS_EXTENSIONS:
-            raise ConfigValueError(
-                f"Dangerous pandoc extension enabled: +{ext_name} in from_format {value!r}. "
-                f"Blocked extensions: {sorted(_DANGEROUS_EXTENSIONS)}"
-            )
+    if len(parts) > 1:
+        _validate_pandoc_extensions(parts[1], value)
 
 
 _VALID_HEADING_LEVELS: frozenset[str] = frozenset(
