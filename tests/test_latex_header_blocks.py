@@ -11,6 +11,7 @@ from obsidian_export.pipeline.latex_header import (
     _build_header_footer_block,
     _build_line_spacing_block,
     _build_unicode_char_block,
+    _validate_header_footer_values,
     _validate_latex_value,
 )
 
@@ -221,6 +222,35 @@ class TestBuildLineSpacingBlock:
     def test_one_point_two_returns_setspace(self) -> None:
         result = _build_line_spacing_block(1.2)
         assert "\\setstretch{1.2}" in result
+
+
+class TestValidateHeaderFooterValues:
+    def test_all_empty_passes(self) -> None:
+        _validate_header_footer_values({"header_left": "", "footer_center": ""})
+
+    def test_safe_values_pass(self) -> None:
+        _validate_header_footer_values(
+            {
+                "header_left": "\\sffamily Title",
+                "footer_center": "\\thepage",
+            }
+        )
+
+    def test_rejects_dangerous_macro(self) -> None:
+        with pytest.raises(UnsafeLatexError, match="header_left"):
+            _validate_header_footer_values({"header_left": "\\input{/etc/passwd}"})
+
+    def test_rejects_dangerous_in_second_field(self) -> None:
+        with pytest.raises(UnsafeLatexError, match="footer_right"):
+            _validate_header_footer_values(
+                {
+                    "header_left": "safe",
+                    "footer_right": "\\write18{cmd}",
+                }
+            )
+
+    def test_skips_empty_values(self) -> None:
+        _validate_header_footer_values({"header_left": "", "footer_center": "\\thepage"})
 
 
 class TestBuildHeaderFooterBlock:

@@ -248,6 +248,16 @@ def _build_code_block(code_fontsize: str) -> str:
     )
 
 
+def _validate_header_footer_values(fields: dict[str, str]) -> None:
+    """Validate all header/footer values for dangerous LaTeX macros.
+
+    Raises UnsafeLatexError if any value contains a dangerous macro.
+    """
+    for field_name, value in fields.items():
+        if value:
+            _validate_latex_value(value, field_name)
+
+
 def _build_header_footer_block(
     header_left: str,
     header_right: str,
@@ -256,17 +266,16 @@ def _build_header_footer_block(
     footer_right: str,
 ) -> str:
     """Generate fancyhdr package setup with configured header/footer fields."""
-    for field_name, value in (
-        ("header_left", header_left),
-        ("header_right", header_right),
-        ("footer_left", footer_left),
-        ("footer_center", footer_center),
-        ("footer_right", footer_right),
-    ):
-        if value:
-            _validate_latex_value(value, field_name)
+    fields = {
+        "header_left": header_left,
+        "header_right": header_right,
+        "footer_left": footer_left,
+        "footer_center": footer_center,
+        "footer_right": footer_right,
+    }
+    _validate_header_footer_values(fields)
 
-    if not any([header_left, header_right, footer_left, footer_center, footer_right]):
+    if not any(fields.values()):
         return ""
     lines = [
         "\\usepackage{fancyhdr}",
