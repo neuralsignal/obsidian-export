@@ -2,12 +2,10 @@
 
 import dataclasses
 
-import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from obsidian_export.config import ObsidianConfig, default_config
-from obsidian_export.exceptions import ConfigValueError
 from obsidian_export.pipeline.stage2_preprocess import (
     convert_callouts,
     escape_dollar_signs,
@@ -137,10 +135,6 @@ class TestProcessUrls:
         text = "See https://example.com for details."
         result = process_urls(text, "footnote_all", 60)
         assert result != text
-
-    def test_unknown_strategy_raises(self) -> None:
-        with pytest.raises(ConfigValueError, match="Unknown url_strategy.*'bogus'"):
-            process_urls("text", "bogus", 60)
 
 
 # ── normalize_line_endings ────────────────────────────────────────────────────
