@@ -39,6 +39,7 @@ style:
   mainfont: "Georgia"
   sansfont: "Helvetica"
   monofont: "Source Code Pro"
+  greek_font: ""            # Fallback font for Greek glyphs (e.g. "DejaVu Serif"); empty disables
   geometry: "a4paper,margin=25mm"
   line_spacing: 1.5
   linkcolor: "NavyBlue"

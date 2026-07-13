@@ -60,6 +60,7 @@ style:
   mainfont: ""                        # Main font (XeLaTeX)
   sansfont: ""                        # Sans font
   monofont: ""                        # Mono font
+  greek_font: ""                      # Fallback font for Greek glyphs (e.g. "DejaVu Serif"); empty disables
   linkcolor: "NavyBlue"              # Internal link color
   urlcolor: "NavyBlue"               # URL color
   line_spacing: 1.0                  # Line spacing multiplier
@@ -88,7 +89,7 @@ style:
     petrol: [20, 75, 95]
     turkis: [0, 152, 160]
   heading_styles:                    # Custom heading formats (empty = default)
-    - level: "section"               # LaTeX level: section, subsection, subsubsection
+    - level: "section"               # LaTeX level: section, subsection, subsubsection, paragraph, subparagraph
       size: "Large"                  # LaTeX size: huge, LARGE, Large, large, normalsize
       bold: true
       sans: true                     # Use sans-serif font
