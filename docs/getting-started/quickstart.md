@@ -37,4 +37,4 @@ Verify that all required external tools are installed:
 obsidian-export doctor
 ```
 
-This checks for pandoc, tectonic, librsvg (`rsvg-convert`), and optionally mermaid-cli (`mmdc`).
+This checks for pandoc, tectonic, librsvg (`rsvg-convert`), and optionally mermaid-cli (`mmdc`) and Node.js (`node`).
