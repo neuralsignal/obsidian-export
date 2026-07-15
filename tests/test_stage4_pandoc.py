@@ -3,9 +3,12 @@
 import dataclasses
 import shutil
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 import yaml
+from hypothesis import given
+from hypothesis import strategies as st
 
 from obsidian_export.config import PandocConfig, StyleConfig, default_config
 from obsidian_export.pipeline.latex_header import render_header
@@ -85,6 +88,51 @@ class TestYamlMetadataBlock:
         parsed = yaml.safe_load(block.strip().strip("-"))
         assert parsed["title"] == "Test"
         assert parsed["table_fontsize"] == "small"
+
+
+class TestPdfTitleSanitization:
+    """The title in PDF metadata must be LaTeX-escaped to prevent injection."""
+
+    @patch("obsidian_export.pipeline.stage4_pandoc._run_pandoc")
+    def test_backslash_input_escaped(self, mock_run_pandoc: object, tmp_path: Path) -> None:
+        r"""A title with \input{...} must be neutralized before reaching pandoc."""
+        inv = _make_invocation(tmp_path, SAMPLE_TEXT, r"\input{/etc/passwd}", "output.pdf", tmp_path)
+        with patch("obsidian_export.pipeline.stage4_pandoc.tempfile") as mock_tf:
+            mock_file = mock_tf.NamedTemporaryFile.return_value.__enter__.return_value
+            mock_file.name = str(tmp_path / "header.tex")
+            (tmp_path / "header.tex").write_text("")
+            convert_to_pdf(inv, "")
+        metadata = mock_run_pandoc.call_args[0][2]
+        assert r"\input" not in metadata["title"]
+        assert "textbackslash" in metadata["title"]
+
+    @patch("obsidian_export.pipeline.stage4_pandoc._run_pandoc")
+    def test_dollar_sign_escaped(self, mock_run_pandoc: object, tmp_path: Path) -> None:
+        inv = _make_invocation(tmp_path, SAMPLE_TEXT, "$25/user", "output.pdf", tmp_path)
+        with patch("obsidian_export.pipeline.stage4_pandoc.tempfile") as mock_tf:
+            mock_file = mock_tf.NamedTemporaryFile.return_value.__enter__.return_value
+            mock_file.name = str(tmp_path / "header.tex")
+            (tmp_path / "header.tex").write_text("")
+            convert_to_pdf(inv, "")
+        metadata = mock_run_pandoc.call_args[0][2]
+        assert metadata["title"] == "\\$25/user"
+
+    @patch("obsidian_export.pipeline.stage4_pandoc._run_pandoc")
+    def test_docx_title_not_escaped(self, mock_run_pandoc: object, tmp_path: Path) -> None:
+        """DOCX does not use LaTeX — title must remain unescaped."""
+        inv = _make_invocation(tmp_path, SAMPLE_TEXT, "$25 & 10%", "output.docx", tmp_path)
+        convert_to_docx(inv, reference_doc=None)
+        metadata = mock_run_pandoc.call_args[0][2]
+        assert metadata["title"] == "$25 & 10%"
+
+    @given(payload=st.text(min_size=1, max_size=50))
+    def test_escaped_title_cannot_contain_raw_backslash_commands(self, payload: str) -> None:
+        r"""After escaping, no raw \command sequences survive."""
+        from obsidian_export.pipeline.latex_header import _escape_latex
+
+        title = f"\\input{{{payload}}}"
+        escaped = _escape_latex(title)
+        assert not escaped.startswith("\\input")
 
 
 class TestConvertToDocx:
