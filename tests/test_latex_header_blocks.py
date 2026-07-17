@@ -3,6 +3,10 @@
 import pytest
 
 from obsidian_export.exceptions import UnsafeLatexError
+from obsidian_export.pipeline.latex_escape import (
+    _validate_header_footer_values,
+    _validate_latex_value,
+)
 from obsidian_export.pipeline.latex_header import (
     _build_brand_colors_block,
     _build_code_block,
@@ -11,8 +15,6 @@ from obsidian_export.pipeline.latex_header import (
     _build_header_footer_block,
     _build_line_spacing_block,
     _build_unicode_char_block,
-    _validate_header_footer_values,
-    _validate_latex_value,
 )
 
 

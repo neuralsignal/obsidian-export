@@ -6,12 +6,14 @@ import pytest
 
 from obsidian_export.config import HeadingStyle, StyleConfig, TitleStyle, default_config
 from obsidian_export.exceptions import UnsafeLatexError
-from obsidian_export.pipeline.latex_header import (
-    _build_heading_styles_block,
-    _build_title_style_block,
+from obsidian_export.pipeline.latex_escape import (
     _escape_latex,
     _substitute_placeholders,
     _truncate_title,
+)
+from obsidian_export.pipeline.latex_header import (
+    _build_heading_styles_block,
+    _build_title_style_block,
 )
 
 
