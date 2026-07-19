@@ -182,6 +182,18 @@ def _build_brand_colors_block(brand_colors: tuple[tuple[str, int, int, int], ...
     return "\n".join(lines)
 
 
+def _build_format_parts(size: str, bold: bool, sans: bool, color: str) -> list[str]:
+    """Build LaTeX font-format command fragments from style fields."""
+    parts = [f"\\{size}"]
+    if bold:
+        parts.append("\\bfseries")
+    if sans:
+        parts.append("\\sffamily")
+    if color:
+        parts.append(f"\\color{{{_escape_latex(color)}}}")
+    return parts
+
+
 def _build_heading_styles_block(heading_styles: tuple[HeadingStyle, ...]) -> str:
     """Generate titlesec heading format commands."""
     if not heading_styles:
@@ -189,16 +201,8 @@ def _build_heading_styles_block(heading_styles: tuple[HeadingStyle, ...]) -> str
     lines = ["\\usepackage{titlesec}"]
     for h in heading_styles:
         _validate_latex_value(f"\\{h.size}", "heading_styles.size")
-        parts = ["\\normalfont"]
-        parts.append(f"\\{h.size}")
-        if h.bold:
-            parts.append("\\bfseries")
-        if h.sans:
-            parts.append("\\sffamily")
-        if h.color:
-            parts.append(f"\\color{{{_escape_latex(h.color)}}}")
+        parts = ["\\normalfont"] + _build_format_parts(h.size, h.bold, h.sans, h.color)
         fmt = "".join(parts)
-        # For the content argument (last {}), use \\MakeUppercase if uppercase
         content_arg = "{\\MakeUppercase}" if h.uppercase else "{}"
         lines.append(f"\\titleformat{{\\{h.level}}}\n  {{{fmt}}}\n  {{\\the{h.level}}}{{1em}}{content_arg}")
     return "\n\n".join(lines)
@@ -209,15 +213,7 @@ def _build_title_style_block(title_style: TitleStyle | None) -> str:
     if title_style is None:
         return ""
     _validate_latex_value(f"\\{title_style.size}", "title_style.size")
-    title_parts = []
-    title_parts.append(f"\\{title_style.size}")
-    if title_style.bold:
-        title_parts.append("\\bfseries")
-    if title_style.sans:
-        title_parts.append("\\sffamily")
-    if title_style.color:
-        title_parts.append(f"\\color{{{_escape_latex(title_style.color)}}}")
-    title_fmt = "".join(title_parts)
+    title_fmt = "".join(_build_format_parts(title_style.size, title_style.bold, title_style.sans, title_style.color))
 
     lines = [
         "\\makeatletter",

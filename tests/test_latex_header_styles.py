@@ -7,6 +7,7 @@ import pytest
 from obsidian_export.config import HeadingStyle, StyleConfig, TitleStyle, default_config
 from obsidian_export.exceptions import UnsafeLatexError
 from obsidian_export.pipeline.latex_header import (
+    _build_format_parts,
     _build_heading_styles_block,
     _build_title_style_block,
     _escape_latex,
@@ -21,6 +22,31 @@ def _make_style(**overrides) -> StyleConfig:
     fields = {f.name: getattr(base, f.name) for f in dataclasses.fields(base)}
     fields.update(overrides)
     return StyleConfig(**fields)
+
+
+class TestBuildFormatParts:
+    def test_size_only(self) -> None:
+        assert _build_format_parts("Large", False, False, "") == ["\\Large"]
+
+    def test_all_fields(self) -> None:
+        result = _build_format_parts("huge", True, True, "petrol")
+        assert result == ["\\huge", "\\bfseries", "\\sffamily", "\\color{petrol}"]
+
+    def test_bold_only(self) -> None:
+        result = _build_format_parts("large", True, False, "")
+        assert result == ["\\large", "\\bfseries"]
+
+    def test_sans_only(self) -> None:
+        result = _build_format_parts("large", False, True, "")
+        assert result == ["\\large", "\\sffamily"]
+
+    def test_color_only(self) -> None:
+        result = _build_format_parts("large", False, False, "turkis")
+        assert result == ["\\large", "\\color{turkis}"]
+
+    def test_color_special_chars_escaped(self) -> None:
+        result = _build_format_parts("large", False, False, "my_color")
+        assert result == ["\\large", "\\color{my\\_color}"]
 
 
 class TestBuildHeadingStylesBlock:
