@@ -9,6 +9,7 @@ from typing import Any
 import yaml
 
 from obsidian_export.config import PandocConfig, StyleConfig
+from obsidian_export.pipeline.latex_header import _escape_latex
 
 
 @dataclass(frozen=True)
@@ -84,7 +85,7 @@ def convert_to_pdf(
 
     try:
         metadata = {
-            "title": invocation.title,
+            "title": _escape_latex(invocation.title),
             "table_fontsize": invocation.style_config.table_fontsize,
             "url_footnote_threshold": invocation.style_config.url_footnote_threshold,
         }
