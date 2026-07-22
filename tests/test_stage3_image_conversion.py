@@ -276,6 +276,49 @@ class TestPathTraversal:
             with pytest.raises(PathTraversalError, match="Image path escapes document root"):
                 convert_images_for_pdf(text, tmpdir, resource_path=vault)
 
+    def test_native_absolute_path_outside_root_raises(self) -> None:
+        with tempfile.TemporaryDirectory() as workdir:
+            workdir = Path(workdir)
+            vault = workdir / "vault"
+            vault.mkdir()
+            outside = workdir / "outside.png"
+            _create_test_image(outside, "PNG")
+
+            tmpdir = workdir / "out"
+            tmpdir.mkdir()
+
+            text = f"![escape]({outside})\n"
+            with pytest.raises(PathTraversalError, match="Image path escapes document root"):
+                convert_images_for_pdf(text, tmpdir, resource_path=vault)
+
+    def test_native_absolute_path_within_root_allowed(self) -> None:
+        with tempfile.TemporaryDirectory() as workdir:
+            workdir = Path(workdir)
+            vault = workdir / "vault"
+            vault.mkdir()
+            img = vault / "photo.png"
+            _create_test_image(img, "PNG")
+
+            tmpdir = workdir / "out"
+            tmpdir.mkdir()
+
+            text = f"![ok]({img})\n"
+            result = convert_images_for_pdf(text, tmpdir, resource_path=vault)
+            assert str(img) in result
+
+    def test_native_absolute_path_no_resource_path_allowed(self) -> None:
+        with tempfile.TemporaryDirectory() as workdir:
+            workdir = Path(workdir)
+            img = workdir / "photo.png"
+            _create_test_image(img, "PNG")
+
+            tmpdir = workdir / "out"
+            tmpdir.mkdir()
+
+            text = f"![ok]({img})\n"
+            result = convert_images_for_pdf(text, tmpdir, resource_path=None)
+            assert str(img) in result
+
     def test_path_within_root_allowed(self) -> None:
         with tempfile.TemporaryDirectory() as workdir:
             workdir = Path(workdir)

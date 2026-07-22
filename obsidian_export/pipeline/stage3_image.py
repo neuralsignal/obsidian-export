@@ -53,6 +53,10 @@ def convert_images(
                 abs_path = resource_path / img_path
                 assert_within_root(abs_path, resource_path, "Image")
                 return f"![{m.group(1)}]({abs_path})"
+            if img_path.is_absolute() and resource_path is not None:
+                resolved = img_path.resolve()
+                if not resolved.is_relative_to(tmpdir.resolve()):
+                    assert_within_root(img_path, resource_path, "Image")
             return m.group(0)
 
         return None
