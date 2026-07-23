@@ -14,6 +14,14 @@
 * pin urllib3 `>=2.7.0,<3` to fix CVE-2026-44432 (decompression resource exhaustion in streaming API) ([#194](https://github.com/neuralsignal/obsidian-export/issues/194))
 * pin idna `>=3.15,<4` to fix CVE-2026-45409 (ReDoS/DoS in `idna.encode()` via `valid_contexto`) ([#205](https://github.com/neuralsignal/obsidian-export/issues/205))
 
+## [0.6.3](https://github.com/neuralsignal/obsidian-export/compare/v0.6.2...v0.6.3) (2026-07-23)
+
+
+### Bug Fixes
+
+* escape LaTeX in PDF metadata title to prevent injection ([#239](https://github.com/neuralsignal/obsidian-export/issues/239)) ([a0b434e](https://github.com/neuralsignal/obsidian-export/commit/a0b434eea9780c34ca9a9d91e20e3872c6406d9a))
+* validate absolute native-format image paths against root ([#246](https://github.com/neuralsignal/obsidian-export/issues/246)) ([44f343a](https://github.com/neuralsignal/obsidian-export/commit/44f343a02123c08d07f0aa33138c8ac67e41d4a9))
+
 ## [0.6.2](https://github.com/neuralsignal/obsidian-export/compare/v0.6.1...v0.6.2) (2026-07-13)
 
 
