@@ -2,6 +2,7 @@
 
 import re
 import subprocess
+from itertools import count
 from pathlib import Path
 
 from obsidian_export.config import MermaidConfig
@@ -18,26 +19,24 @@ def render_mermaid_blocks(body: str, config: MermaidConfig, tmpdir: Path) -> str
     """
     mmdc = config.mmdc_bin
 
-    counter = 0
+    counter = count(1)
 
     def replace_block(m: re.Match) -> str:
         """Replace a fenced mermaid code block with a rendered PNG image reference.
 
         Receives a match whose group(1) is the mermaid diagram source. Writes the
         source to a temporary file, invokes mmdc to render it as PNG, and returns
-        a markdown image reference to the output file. Increments the outer
-        ``counter`` for unique filenames.
+        a markdown image reference to the output file.
         """
-        nonlocal counter
         if not mmdc.exists():
             raise FileNotFoundError(
                 f"mmdc binary not found at {mmdc}. Install: npm install --prefix .mmdc @mermaid-js/mermaid-cli"
             )
         diagram_src = m.group(1)
-        counter += 1
+        idx = next(counter)
 
-        src_file = tmpdir / f"diagram_{counter}.mmd"
-        out_file = tmpdir / f"diagram_{counter}.png"
+        src_file = tmpdir / f"diagram_{idx}.mmd"
+        out_file = tmpdir / f"diagram_{idx}.png"
         src_file.write_text(diagram_src, encoding="utf-8")
 
         cmd = [
@@ -58,10 +57,8 @@ def render_mermaid_blocks(body: str, config: MermaidConfig, tmpdir: Path) -> str
             subprocess.run(cmd, check=True, capture_output=True)
         except subprocess.CalledProcessError as exc:
             stderr = exc.stderr.decode(errors="replace") if exc.stderr else "(no stderr)"
-            raise MermaidRenderError(
-                f"mmdc failed (exit {exc.returncode}) rendering diagram {counter}:\n{stderr}"
-            ) from exc
+            raise MermaidRenderError(f"mmdc failed (exit {exc.returncode}) rendering diagram {idx}:\n{stderr}") from exc
 
-        return f"![Diagram {counter}]({out_file})"
+        return f"![Diagram {idx}]({out_file})"
 
     return _MERMAID_BLOCK_RE.sub(replace_block, body)

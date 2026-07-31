@@ -3,6 +3,7 @@
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
+from itertools import count
 from pathlib import Path
 
 from obsidian_export.exceptions import ObsidianExportError
@@ -49,12 +50,9 @@ def _replace_image_match(
     resource_path: Path | None,
     tmpdir: Path,
     spec: ImageConversionSpec,
-    counter: list[int],
+    counter: count[int],
 ) -> str:
-    """Process a single image-reference match through the resolve-guard-convert flow.
-
-    counter is a single-element list used as a mutable accumulator for output numbering.
-    """
+    """Process a single image-reference match through the resolve-guard-convert flow."""
     alt_text = m.group(1)
     img_raw = m.group(2)
 
@@ -70,8 +68,8 @@ def _replace_image_match(
     if not img_path.exists():
         raise spec.not_found_error(f"{spec.label} file not found: {img_path}")
 
-    counter[0] += 1
-    out_path = tmpdir / f"{spec.out_prefix}{counter[0]}{spec.out_ext}"
+    idx = next(counter)
+    out_path = tmpdir / f"{spec.out_prefix}{idx}{spec.out_ext}"
 
     spec.convert_fn(img_path, out_path)
 
@@ -90,7 +88,7 @@ def convert_image_references(
     string to use as the replacement (skipping conversion), or None to proceed
     with the standard resolve-guard-convert flow.
     """
-    counter = [0]
+    counter = count(1)
 
     return spec.pattern.sub(
         lambda m: _replace_image_match(m, resource_path, tmpdir, spec, counter),
