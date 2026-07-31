@@ -6,11 +6,11 @@ import pytest
 
 from obsidian_export.config import HeadingStyle, StyleConfig, TitleStyle, default_config
 from obsidian_export.exceptions import UnsafeLatexError
+from obsidian_export.pipeline.latex_escape import escape_latex
 from obsidian_export.pipeline.latex_header import (
     _build_format_parts,
     _build_heading_styles_block,
     _build_title_style_block,
-    _escape_latex,
     _substitute_placeholders,
     _truncate_title,
 )
@@ -190,38 +190,38 @@ class TestTruncateTitle:
 
 class TestEscapeLatex:
     def test_plain_text_unchanged(self) -> None:
-        assert _escape_latex("Hello World") == "Hello World"
+        assert escape_latex("Hello World") == "Hello World"
 
     def test_underscores_escaped(self) -> None:
-        assert _escape_latex("my_file_name") == "my\\_file\\_name"
+        assert escape_latex("my_file_name") == "my\\_file\\_name"
 
     def test_dollar_escaped(self) -> None:
-        assert _escape_latex("costs $50") == "costs \\$50"
+        assert escape_latex("costs $50") == "costs \\$50"
 
     def test_ampersand_escaped(self) -> None:
-        assert _escape_latex("A & B") == "A \\& B"
+        assert escape_latex("A & B") == "A \\& B"
 
     def test_percent_escaped(self) -> None:
-        assert _escape_latex("100%") == "100\\%"
+        assert escape_latex("100%") == "100\\%"
 
     def test_hash_escaped(self) -> None:
-        assert _escape_latex("item #1") == "item \\#1"
+        assert escape_latex("item #1") == "item \\#1"
 
     def test_multiple_special_chars(self) -> None:
-        result = _escape_latex("file_name $100 & 50%")
+        result = escape_latex("file_name $100 & 50%")
         assert "\\_" in result
         assert "\\$" in result
         assert "\\&" in result
         assert "\\%" in result
 
     def test_empty_string(self) -> None:
-        assert _escape_latex("") == ""
+        assert escape_latex("") == ""
 
     def test_tilde_escaped(self) -> None:
-        assert _escape_latex("~") == "\\textasciitilde{}"
+        assert escape_latex("~") == "\\textasciitilde{}"
 
     def test_caret_escaped(self) -> None:
-        assert _escape_latex("^") == "\\textasciicircum{}"
+        assert escape_latex("^") == "\\textasciicircum{}"
 
 
 class TestSubstitutePlaceholders:

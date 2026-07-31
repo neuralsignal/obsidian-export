@@ -5,6 +5,7 @@ from pathlib import Path
 
 from obsidian_export.config import HeadingStyle, StyleConfig, TitleStyle
 from obsidian_export.exceptions import UnsafeLatexError
+from obsidian_export.pipeline.latex_escape import escape_latex
 
 _DANGEROUS_LATEX_RE = re.compile(
     r"\\(?:input|include|write\d*|immediate|openin|openout|read|closein|closeout"
@@ -81,31 +82,11 @@ def _truncate_title(title: str) -> str:
     return title
 
 
-def _escape_latex(text: str) -> str:
-    """Escape LaTeX special characters in plain text for safe preamble insertion."""
-    # Order matters: & must come before others that might produce &
-    replacements = [
-        ("\\", "\\textbackslash{}"),
-        ("&", "\\&"),
-        ("%", "\\%"),
-        ("$", "\\$"),
-        ("#", "\\#"),
-        ("_", "\\_"),
-        ("{", "\\{"),
-        ("}", "\\}"),
-        ("~", "\\textasciitilde{}"),
-        ("^", "\\textasciicircum{}"),
-    ]
-    for char, escaped in replacements:
-        text = text.replace(char, escaped)
-    return text
-
-
 def _substitute_placeholders(value: str, title: str, logo_path: str) -> str:
     """Replace {doc_title} and {logo_path} in a header/footer config string."""
     if not value:
         return value
-    short_title = _escape_latex(_truncate_title(title))
+    short_title = escape_latex(_truncate_title(title))
     return value.replace("{doc_title}", short_title).replace("{logo_path}", logo_path)
 
 
@@ -138,11 +119,11 @@ def _build_font_block(mainfont: str, sansfont: str, monofont: str) -> str:
     """Generate \\setmainfont/\\setsansfont/\\setmonofont lines for non-empty font settings."""
     lines = []
     if mainfont:
-        lines.append(f"\\setmainfont{{{_escape_latex(mainfont)}}}")
+        lines.append(f"\\setmainfont{{{escape_latex(mainfont)}}}")
     if sansfont:
-        lines.append(f"\\setsansfont{{{_escape_latex(sansfont)}}}")
+        lines.append(f"\\setsansfont{{{escape_latex(sansfont)}}}")
     if monofont:
-        lines.append(f"\\setmonofont{{{_escape_latex(monofont)}}}")
+        lines.append(f"\\setmonofont{{{escape_latex(monofont)}}}")
     return "\n".join(lines)
 
 
@@ -157,7 +138,7 @@ def _build_greek_fallback_block(greek_font: str) -> str:
     """
     if not greek_font:
         return ""
-    escaped = _escape_latex(greek_font)
+    escaped = escape_latex(greek_font)
     return (
         "\\usepackage{ucharclasses}\n"
         f"\\newfontfamily\\greekfallbackfont{{{escaped}}}\n"
@@ -178,7 +159,7 @@ def _build_brand_colors_block(brand_colors: tuple[tuple[str, int, int, int], ...
         return ""
     lines = []
     for name, r, g, b in brand_colors:
-        lines.append(f"\\definecolor{{{_escape_latex(name)}}}{{RGB}}{{{r},{g},{b}}}")
+        lines.append(f"\\definecolor{{{escape_latex(name)}}}{{RGB}}{{{r},{g},{b}}}")
     return "\n".join(lines)
 
 
@@ -190,7 +171,7 @@ def _build_format_parts(size: str, bold: bool, sans: bool, color: str) -> list[s
     if sans:
         parts.append("\\sffamily")
     if color:
-        parts.append(f"\\color{{{_escape_latex(color)}}}")
+        parts.append(f"\\color{{{escape_latex(color)}}}")
     return parts
 
 
