@@ -7,7 +7,6 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 from obsidian_export.config import (
-    HeadingStyle,
     TitleStyle,
 )
 from obsidian_export.config.loader import (
@@ -75,9 +74,9 @@ def testparse_heading_styles_empty() -> None:
     assert parse_heading_styles([]) == ()
 
 
-def testparse_heading_styles_defaults_optional_fields() -> None:
-    result = parse_heading_styles([{"level": "section", "size": "Large"}])
-    assert result == (HeadingStyle(level="section", size="Large", bold=False, sans=False, color="", uppercase=False),)
+def testparse_heading_styles_missing_field_raises() -> None:
+    with pytest.raises(ConfigValueError, match="heading_styles entry missing required field"):
+        parse_heading_styles([{"level": "section", "size": "Large"}])
 
 
 def testparse_heading_styles_all_fields() -> None:
@@ -130,14 +129,9 @@ def testparse_title_style_full() -> None:
     assert result == TitleStyle(size="huge", bold=True, sans=True, color="blue", date_visible=False, vskip_after="1em")
 
 
-def testparse_title_style_defaults_optional() -> None:
-    result = parse_title_style({"size": "large"})
-    assert result is not None
-    assert result.bold is False
-    assert result.sans is False
-    assert result.color == ""
-    assert result.date_visible is True
-    assert result.vskip_after == ""
+def testparse_title_style_missing_field_raises() -> None:
+    with pytest.raises(ConfigValueError, match="title_style missing required field"):
+        parse_title_style({"size": "large"})
 
 
 # ── parse_unicode_chars ──────────────────────────────────────────────────
