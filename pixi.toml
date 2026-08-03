@@ -18,7 +18,7 @@ pip = ">=26.1.2,<27"
 obsidian-export = {path = ".", editable = true}
 pyyaml = ">=6.0,<7"
 click = ">=8.0,<9"
-pillow = ">=12.1.1,<13"
+pillow = ">=12.3.0,<13"
 urllib3 = ">=2.7.0,<3"
 idna = ">=3.15,<4"
 pytest = ">=9.0.3,<10"
