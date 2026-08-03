@@ -1,16 +1,13 @@
 """Generate rendered LaTeX header from style config and template."""
 
-import re
 from pathlib import Path
 
 from obsidian_export.config import HeadingStyle, StyleConfig, TitleStyle
-from obsidian_export.exceptions import UnsafeLatexError
-
-_DANGEROUS_LATEX_RE = re.compile(
-    r"\\(?:input|include|write\d*|immediate|openin|openout|read|closein|closeout"
-    r"|catcode|def|edef|gdef|xdef|let|csname|newwrite|ShellEscape|directlua"
-    r"|luaexec|luadirect)(?![a-zA-Z])",
-    re.IGNORECASE,
+from obsidian_export.pipeline.latex_escape import (
+    escape_latex,
+    substitute_placeholders,
+    validate_header_footer_values,
+    validate_latex_value,
 )
 
 
@@ -27,11 +24,11 @@ def render_header(style: StyleConfig, template_path: Path, title: str) -> str:
 
     # Logo path is now resolved to absolute during config loading
     logo_path = style.logo if style.logo else ""
-    header_left = _substitute_placeholders(style.header_left, title, logo_path)
-    header_right = _substitute_placeholders(style.header_right, title, logo_path)
-    footer_left = _substitute_placeholders(style.footer_left, title, logo_path)
-    footer_center = _substitute_placeholders(style.footer_center, title, logo_path)
-    footer_right = _substitute_placeholders(style.footer_right, title, logo_path)
+    header_left = substitute_placeholders(style.header_left, title, logo_path)
+    header_right = substitute_placeholders(style.header_right, title, logo_path)
+    footer_left = substitute_placeholders(style.footer_left, title, logo_path)
+    footer_center = substitute_placeholders(style.footer_center, title, logo_path)
+    footer_right = substitute_placeholders(style.footer_right, title, logo_path)
 
     unicode_char_block = _build_unicode_char_block(style.unicode_chars)
     font_block = _build_font_block(style.mainfont, style.sansfont, style.monofont)
@@ -72,64 +69,13 @@ def render_header(style: StyleConfig, template_path: Path, title: str) -> str:
     )
 
 
-def _truncate_title(title: str) -> str:
-    """Shorten title for header use — cut before first em-dash or colon."""
-    for sep in (" — ", " – ", " - ", ": "):
-        pos = title.find(sep)
-        if pos != -1:
-            return title[:pos].strip()
-    return title
-
-
-def _escape_latex(text: str) -> str:
-    """Escape LaTeX special characters in plain text for safe preamble insertion."""
-    # Order matters: & must come before others that might produce &
-    replacements = [
-        ("\\", "\\textbackslash{}"),
-        ("&", "\\&"),
-        ("%", "\\%"),
-        ("$", "\\$"),
-        ("#", "\\#"),
-        ("_", "\\_"),
-        ("{", "\\{"),
-        ("}", "\\}"),
-        ("~", "\\textasciitilde{}"),
-        ("^", "\\textasciicircum{}"),
-    ]
-    for char, escaped in replacements:
-        text = text.replace(char, escaped)
-    return text
-
-
-def _substitute_placeholders(value: str, title: str, logo_path: str) -> str:
-    """Replace {doc_title} and {logo_path} in a header/footer config string."""
-    if not value:
-        return value
-    short_title = _escape_latex(_truncate_title(title))
-    return value.replace("{doc_title}", short_title).replace("{logo_path}", logo_path)
-
-
-def _validate_latex_value(latex: str, field_name: str) -> None:
-    """Reject latex values containing dangerous macros.
-
-    Raises UnsafeLatexError if the value contains macros that could read files,
-    execute shell commands, or redefine TeX internals.
-    """
-    if _DANGEROUS_LATEX_RE.search(latex):
-        msg = (
-            f"Config field '{field_name}' contains a dangerous LaTeX macro: "
-            f"'{latex}'. Remove or replace it with a safe alternative."
-        )
-        raise UnsafeLatexError(msg)
-
-
 def _build_unicode_char_block(unicode_chars: tuple[tuple[str, str], ...]) -> str:
     """Generate \\newunicodechar lines from config tuples."""
     if not unicode_chars:
         return ""
     lines = []
     for char, latex in unicode_chars:
-        _validate_latex_value(latex, f"unicode_chars['{char}']")
+        validate_latex_value(latex, f"unicode_chars['{char}']")
         lines.append(f"\\newunicodechar{{{char}}}{{{latex}}}")
     return "\n".join(lines)
 
@@ -138,11 +84,11 @@ def _build_font_block(mainfont: str, sansfont: str, monofont: str) -> str:
     """Generate \\setmainfont/\\setsansfont/\\setmonofont lines for non-empty font settings."""
     lines = []
     if mainfont:
-        lines.append(f"\\setmainfont{{{_escape_latex(mainfont)}}}")
+        lines.append(f"\\setmainfont{{{escape_latex(mainfont)}}}")
     if sansfont:
-        lines.append(f"\\setsansfont{{{_escape_latex(sansfont)}}}")
+        lines.append(f"\\setsansfont{{{escape_latex(sansfont)}}}")
     if monofont:
-        lines.append(f"\\setmonofont{{{_escape_latex(monofont)}}}")
+        lines.append(f"\\setmonofont{{{escape_latex(monofont)}}}")
     return "\n".join(lines)
 
 
@@ -157,7 +103,7 @@ def _build_greek_fallback_block(greek_font: str) -> str:
     """
     if not greek_font:
         return ""
-    escaped = _escape_latex(greek_font)
+    escaped = escape_latex(greek_font)
     return (
         "\\usepackage{ucharclasses}\n"
         f"\\newfontfamily\\greekfallbackfont{{{escaped}}}\n"
@@ -178,7 +124,7 @@ def _build_brand_colors_block(brand_colors: tuple[tuple[str, int, int, int], ...
         return ""
     lines = []
     for name, r, g, b in brand_colors:
-        lines.append(f"\\definecolor{{{_escape_latex(name)}}}{{RGB}}{{{r},{g},{b}}}")
+        lines.append(f"\\definecolor{{{escape_latex(name)}}}{{RGB}}{{{r},{g},{b}}}")
     return "\n".join(lines)
 
 
@@ -190,7 +136,7 @@ def _build_format_parts(size: str, bold: bool, sans: bool, color: str) -> list[s
     if sans:
         parts.append("\\sffamily")
     if color:
-        parts.append(f"\\color{{{_escape_latex(color)}}}")
+        parts.append(f"\\color{{{escape_latex(color)}}}")
     return parts
 
 
@@ -200,7 +146,7 @@ def _build_heading_styles_block(heading_styles: tuple[HeadingStyle, ...]) -> str
         return ""
     lines = ["\\usepackage{titlesec}"]
     for h in heading_styles:
-        _validate_latex_value(f"\\{h.size}", "heading_styles.size")
+        validate_latex_value(f"\\{h.size}", "heading_styles.size")
         parts = ["\\normalfont"] + _build_format_parts(h.size, h.bold, h.sans, h.color)
         fmt = "".join(parts)
         content_arg = "{\\MakeUppercase}" if h.uppercase else "{}"
@@ -212,7 +158,7 @@ def _build_title_style_block(title_style: TitleStyle | None) -> str:
     """Generate custom \\maketitle definition."""
     if title_style is None:
         return ""
-    _validate_latex_value(f"\\{title_style.size}", "title_style.size")
+    validate_latex_value(f"\\{title_style.size}", "title_style.size")
     title_fmt = "".join(_build_format_parts(title_style.size, title_style.bold, title_style.sans, title_style.color))
 
     lines = [
@@ -235,23 +181,13 @@ def _build_title_style_block(title_style: TitleStyle | None) -> str:
 def _build_code_block(code_fontsize: str) -> str:
     """Generate fvextra setup for code block line-wrapping and font size control."""
     cmd = f"\\{code_fontsize}"
-    _validate_latex_value(cmd, "code_fontsize")
+    validate_latex_value(cmd, "code_fontsize")
     return (
         "\\usepackage{fvextra}\n"
         f"\\fvset{{breaklines=true, fontsize={cmd}}}\n"
         f"\\DefineVerbatimEnvironment{{verbatim}}{{Verbatim}}"
         f"{{breaklines=true, fontsize={cmd}}}"
     )
-
-
-def _validate_header_footer_values(fields: dict[str, str]) -> None:
-    """Validate all header/footer values for dangerous LaTeX macros.
-
-    Raises UnsafeLatexError if any value contains a dangerous macro.
-    """
-    for field_name, value in fields.items():
-        if value:
-            _validate_latex_value(value, field_name)
 
 
 def _build_header_footer_block(
@@ -269,7 +205,7 @@ def _build_header_footer_block(
         "footer_center": footer_center,
         "footer_right": footer_right,
     }
-    _validate_header_footer_values(fields)
+    validate_header_footer_values(fields)
 
     if not any(fields.values()):
         return ""

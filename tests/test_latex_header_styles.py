@@ -6,13 +6,15 @@ import pytest
 
 from obsidian_export.config import HeadingStyle, StyleConfig, TitleStyle, default_config
 from obsidian_export.exceptions import UnsafeLatexError
+from obsidian_export.pipeline.latex_escape import (
+    escape_latex,
+    substitute_placeholders,
+    truncate_title,
+)
 from obsidian_export.pipeline.latex_header import (
     _build_format_parts,
     _build_heading_styles_block,
     _build_title_style_block,
-    _escape_latex,
-    _substitute_placeholders,
-    _truncate_title,
 )
 
 
@@ -167,89 +169,89 @@ class TestBuildTitleStyleBlock:
 
 class TestTruncateTitle:
     def test_no_separator_unchanged(self) -> None:
-        assert _truncate_title("Short Title") == "Short Title"
+        assert truncate_title("Short Title") == "Short Title"
 
     def test_emdash_truncates(self) -> None:
-        assert _truncate_title("AI Adoption — Getting Started") == "AI Adoption"
+        assert truncate_title("AI Adoption — Getting Started") == "AI Adoption"
 
     def test_endash_truncates(self) -> None:
-        assert _truncate_title("Financial AI – A Landscape") == "Financial AI"
+        assert truncate_title("Financial AI – A Landscape") == "Financial AI"
 
     def test_hyphen_truncates(self) -> None:
-        assert _truncate_title("Exec Summary - Agentic System") == "Exec Summary"
+        assert truncate_title("Exec Summary - Agentic System") == "Exec Summary"
 
     def test_colon_truncates(self) -> None:
-        assert _truncate_title("AI Strategy: Phase 1 Plan") == "AI Strategy"
+        assert truncate_title("AI Strategy: Phase 1 Plan") == "AI Strategy"
 
     def test_emdash_checked_first(self) -> None:
-        assert _truncate_title("Topic: Sub — Detail") == "Topic: Sub"
+        assert truncate_title("Topic: Sub — Detail") == "Topic: Sub"
 
     def test_empty_string(self) -> None:
-        assert _truncate_title("") == ""
+        assert truncate_title("") == ""
 
 
 class TestEscapeLatex:
     def test_plain_text_unchanged(self) -> None:
-        assert _escape_latex("Hello World") == "Hello World"
+        assert escape_latex("Hello World") == "Hello World"
 
     def test_underscores_escaped(self) -> None:
-        assert _escape_latex("my_file_name") == "my\\_file\\_name"
+        assert escape_latex("my_file_name") == "my\\_file\\_name"
 
     def test_dollar_escaped(self) -> None:
-        assert _escape_latex("costs $50") == "costs \\$50"
+        assert escape_latex("costs $50") == "costs \\$50"
 
     def test_ampersand_escaped(self) -> None:
-        assert _escape_latex("A & B") == "A \\& B"
+        assert escape_latex("A & B") == "A \\& B"
 
     def test_percent_escaped(self) -> None:
-        assert _escape_latex("100%") == "100\\%"
+        assert escape_latex("100%") == "100\\%"
 
     def test_hash_escaped(self) -> None:
-        assert _escape_latex("item #1") == "item \\#1"
+        assert escape_latex("item #1") == "item \\#1"
 
     def test_multiple_special_chars(self) -> None:
-        result = _escape_latex("file_name $100 & 50%")
+        result = escape_latex("file_name $100 & 50%")
         assert "\\_" in result
         assert "\\$" in result
         assert "\\&" in result
         assert "\\%" in result
 
     def test_empty_string(self) -> None:
-        assert _escape_latex("") == ""
+        assert escape_latex("") == ""
 
     def test_tilde_escaped(self) -> None:
-        assert _escape_latex("~") == "\\textasciitilde{}"
+        assert escape_latex("~") == "\\textasciitilde{}"
 
     def test_caret_escaped(self) -> None:
-        assert _escape_latex("^") == "\\textasciicircum{}"
+        assert escape_latex("^") == "\\textasciicircum{}"
 
 
 class TestSubstitutePlaceholders:
     def test_empty_string_unchanged(self) -> None:
-        assert _substitute_placeholders("", "My Title", "/path/logo.png") == ""
+        assert substitute_placeholders("", "My Title", "/path/logo.png") == ""
 
     def test_doc_title_replaced(self) -> None:
-        result = _substitute_placeholders("\\sffamily {doc_title}", "My Doc", "/x")
+        result = substitute_placeholders("\\sffamily {doc_title}", "My Doc", "/x")
         assert result == "\\sffamily My Doc"
 
     def test_logo_path_replaced(self) -> None:
-        result = _substitute_placeholders("\\includegraphics{{logo_path}}", "T", "/a/b.png")
+        result = substitute_placeholders("\\includegraphics{{logo_path}}", "T", "/a/b.png")
         assert result == "\\includegraphics{/a/b.png}"
 
     def test_both_replaced(self) -> None:
-        result = _substitute_placeholders("{doc_title} {logo_path}", "Title", "/logo.png")
+        result = substitute_placeholders("{doc_title} {logo_path}", "Title", "/logo.png")
         assert result == "Title /logo.png"
 
     def test_title_with_underscores_escaped(self) -> None:
-        result = _substitute_placeholders("\\sffamily {doc_title}", "my_file_name", "/x")
+        result = substitute_placeholders("\\sffamily {doc_title}", "my_file_name", "/x")
         assert result == "\\sffamily my\\_file\\_name"
 
     def test_title_with_special_chars_escaped(self) -> None:
-        result = _substitute_placeholders("{doc_title}", "costs $50 & 100%", "/x")
+        result = substitute_placeholders("{doc_title}", "costs $50 & 100%", "/x")
         assert "\\$" in result
         assert "\\&" in result
         assert "\\%" in result
 
     def test_no_placeholders_unchanged(self) -> None:
-        result = _substitute_placeholders("\\thepage", "Title", "/logo.png")
+        result = substitute_placeholders("\\thepage", "Title", "/logo.png")
         assert result == "\\thepage"

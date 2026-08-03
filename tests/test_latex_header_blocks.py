@@ -3,6 +3,10 @@
 import pytest
 
 from obsidian_export.exceptions import UnsafeLatexError
+from obsidian_export.pipeline.latex_escape import (
+    validate_header_footer_values,
+    validate_latex_value,
+)
 from obsidian_export.pipeline.latex_header import (
     _build_brand_colors_block,
     _build_code_block,
@@ -11,8 +15,6 @@ from obsidian_export.pipeline.latex_header import (
     _build_header_footer_block,
     _build_line_spacing_block,
     _build_unicode_char_block,
-    _validate_header_footer_values,
-    _validate_latex_value,
 )
 
 
@@ -107,7 +109,7 @@ class TestValidateLatexValue:
     )
     def test_rejects_dangerous_macros(self, latex: str) -> None:
         with pytest.raises(UnsafeLatexError):
-            _validate_latex_value(latex, "⚠")
+            validate_latex_value(latex, "⚠")
 
     @pytest.mark.parametrize(
         "latex",
@@ -121,7 +123,7 @@ class TestValidateLatexValue:
         ],
     )
     def test_allows_safe_macros(self, latex: str) -> None:
-        _validate_latex_value(latex, "⚠")
+        validate_latex_value(latex, "⚠")
 
 
 class TestBuildFontBlock:
@@ -226,10 +228,10 @@ class TestBuildLineSpacingBlock:
 
 class TestValidateHeaderFooterValues:
     def test_all_empty_passes(self) -> None:
-        _validate_header_footer_values({"header_left": "", "footer_center": ""})
+        validate_header_footer_values({"header_left": "", "footer_center": ""})
 
     def test_safe_values_pass(self) -> None:
-        _validate_header_footer_values(
+        validate_header_footer_values(
             {
                 "header_left": "\\sffamily Title",
                 "footer_center": "\\thepage",
@@ -238,11 +240,11 @@ class TestValidateHeaderFooterValues:
 
     def test_rejects_dangerous_macro(self) -> None:
         with pytest.raises(UnsafeLatexError, match="header_left"):
-            _validate_header_footer_values({"header_left": "\\input{/etc/passwd}"})
+            validate_header_footer_values({"header_left": "\\input{/etc/passwd}"})
 
     def test_rejects_dangerous_in_second_field(self) -> None:
         with pytest.raises(UnsafeLatexError, match="footer_right"):
-            _validate_header_footer_values(
+            validate_header_footer_values(
                 {
                     "header_left": "safe",
                     "footer_right": "\\write18{cmd}",
@@ -250,7 +252,7 @@ class TestValidateHeaderFooterValues:
             )
 
     def test_skips_empty_values(self) -> None:
-        _validate_header_footer_values({"header_left": "", "footer_center": "\\thepage"})
+        validate_header_footer_values({"header_left": "", "footer_center": "\\thepage"})
 
 
 class TestBuildHeaderFooterBlock:
