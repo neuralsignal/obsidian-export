@@ -64,6 +64,17 @@ class TestRenderMermaidBlocks:
         assert "```mermaid" not in result
         assert result.count("![Diagram") == 2
 
+    def test_multiple_blocks_numbered_sequentially(self, tmp_path: Path) -> None:
+        """Each block gets a distinct 1-based index so output filenames never collide."""
+        mmdc = _make_fake_mmdc(tmp_path)
+        config = _make_config(mmdc, 3)
+        out_dir = tmp_path / "output"
+        out_dir.mkdir()
+        blocks = "\n\n".join(f"```mermaid\ngraph TB\n    A{i} --> B{i}\n```" for i in range(3))
+        result = render_mermaid_blocks(blocks, config, out_dir)
+        assert [f"![Diagram {i}]" in result for i in (1, 2, 3)] == [True, True, True]
+        assert sorted(p.name for p in out_dir.glob("*.png")) == ["diagram_1.png", "diagram_2.png", "diagram_3.png"]
+
     def test_missing_mmdc_raises(self, tmp_path: Path) -> None:
         config = _make_config(tmp_path / "nonexistent_mmdc", 3)
         with pytest.raises(FileNotFoundError, match="mmdc binary not found"):

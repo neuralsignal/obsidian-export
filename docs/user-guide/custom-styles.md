@@ -82,6 +82,10 @@ style:
 
 Available sizes (LaTeX): `huge`, `LARGE`, `Large`, `large`, `normalsize`, `small`.
 
+Every field shown above is required on each entry. Omitting one raises
+`ConfigValueError` naming the missing field rather than silently applying a
+built-in default.
+
 ## Title Style
 
 Customize the document title block:
@@ -96,6 +100,9 @@ style:
     date_visible: true
     vskip_after: "2em"
 ```
+
+`title_style` may be omitted entirely (or set to `null`) to keep the default
+title block, but when present every field above is required.
 
 ## Headers and Footers
 

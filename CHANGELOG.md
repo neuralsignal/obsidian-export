@@ -6,6 +6,10 @@
 
 * add `style.greek_font` config option: routes Greek-script glyphs to a covering font via `ucharclasses` so Greek text renders even when the main/sans fonts (e.g. Merriweather, Montserrat) lack Greek coverage. Empty value (the default) is a no-op, leaving Latin-only documents unchanged.
 
+### Breaking Changes
+
+* `style.heading_styles` entries and `style.title_style` now require every field to be present. Previously `bold`, `sans`, `color`, `uppercase`, `date_visible`, and `vskip_after` fell back to hardcoded defaults in the parser; a missing field now raises `ConfigValueError` naming the field. `title_style` may still be omitted or `null` to keep the default title block ([#253](https://github.com/neuralsignal/obsidian-export/issues/253))
+
 ### Security
 
 * pin urllib3 `>=2.7.0,<3` to fix CVE-2026-44431 (sensitive headers forwarded on cross-origin proxy redirects) ([#193](https://github.com/neuralsignal/obsidian-export/issues/193))
@@ -13,6 +17,8 @@
 * validate `heading_styles.size`, `title_style.size`, and `code_fontsize` against dangerous LaTeX macros and restrict `heading_styles.level` to a sectioning-command allowlist (`section`, `subsection`, `subsubsection`, `paragraph`, `subparagraph`) ([#148](https://github.com/neuralsignal/obsidian-export/issues/148))
 * pin urllib3 `>=2.7.0,<3` to fix CVE-2026-44432 (decompression resource exhaustion in streaming API) ([#194](https://github.com/neuralsignal/obsidian-export/issues/194))
 * pin idna `>=3.15,<4` to fix CVE-2026-45409 (ReDoS/DoS in `idna.encode()` via `valid_contexto`) ([#205](https://github.com/neuralsignal/obsidian-export/issues/205))
+* bump Pillow pin to `>=12.3.0,<13` to fix 5 known vulnerabilities in 12.2.0 ([#236](https://github.com/neuralsignal/obsidian-export/issues/236))
+* bump pymdown-extensions pin to `>=11.0.0,<12` to fix CVE-2026-61632 ([#248](https://github.com/neuralsignal/obsidian-export/issues/248))
 
 ## [0.6.2](https://github.com/neuralsignal/obsidian-export/compare/v0.6.1...v0.6.2) (2026-07-13)
 

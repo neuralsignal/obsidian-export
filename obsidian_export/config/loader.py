@@ -22,6 +22,7 @@ from obsidian_export.config.validators import (
     validate_pandoc_variable,
     validate_url_strategy,
 )
+from obsidian_export.exceptions import ConfigValueError
 
 
 def deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
@@ -57,31 +58,41 @@ def parse_heading_styles(raw: list[dict[str, Any]]) -> tuple[HeadingStyle, ...]:
     """Parse list of heading style dicts into tuple of HeadingStyle."""
     for h in raw:
         validate_heading_level(h["level"])
-    return tuple(
-        HeadingStyle(
-            level=h["level"],
-            size=h["size"],
-            bold=bool(h.get("bold", False)),
-            sans=bool(h.get("sans", False)),
-            color=h.get("color", ""),
-            uppercase=bool(h.get("uppercase", False)),
-        )
-        for h in raw
-    )
+    results: list[HeadingStyle] = []
+    for h in raw:
+        try:
+            results.append(
+                HeadingStyle(
+                    level=h["level"],
+                    size=h["size"],
+                    bold=bool(h["bold"]),
+                    sans=bool(h["sans"]),
+                    color=h["color"],
+                    uppercase=bool(h["uppercase"]),
+                )
+            )
+        except KeyError as exc:
+            msg = f"heading_styles entry missing required field {exc} (level={h.get('level', '?')})"
+            raise ConfigValueError(msg) from exc
+    return tuple(results)
 
 
 def parse_title_style(raw: dict[str, Any] | None) -> TitleStyle | None:
     """Parse title style dict into TitleStyle, or None if absent."""
     if not raw:
         return None
-    return TitleStyle(
-        size=raw["size"],
-        bold=bool(raw.get("bold", False)),
-        sans=bool(raw.get("sans", False)),
-        color=raw.get("color", ""),
-        date_visible=bool(raw.get("date_visible", True)),
-        vskip_after=raw.get("vskip_after", ""),
-    )
+    try:
+        return TitleStyle(
+            size=raw["size"],
+            bold=bool(raw["bold"]),
+            sans=bool(raw["sans"]),
+            color=raw["color"],
+            date_visible=bool(raw["date_visible"]),
+            vskip_after=raw["vskip_after"],
+        )
+    except KeyError as exc:
+        msg = f"title_style missing required field {exc}"
+        raise ConfigValueError(msg) from exc
 
 
 def parse_unicode_chars(raw: dict[str, str]) -> tuple[tuple[str, str], ...]:

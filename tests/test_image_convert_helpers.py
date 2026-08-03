@@ -2,6 +2,7 @@
 
 import re
 import tempfile
+from itertools import count
 from pathlib import Path
 
 import pytest
@@ -115,7 +116,7 @@ class TestReplaceImageMatch:
     def test_url_returns_original(self) -> None:
         text = "![alt](https://example.com/pic.png)"
         m = _match_from(text)
-        result = _replace_image_match(m, None, Path("/tmp"), _make_spec(), [0])
+        result = _replace_image_match(m, None, Path("/tmp"), _make_spec(), count(1))
         assert result == text
 
     def test_pre_filter_short_circuits(self) -> None:
@@ -124,14 +125,14 @@ class TestReplaceImageMatch:
 
         text = "![alt](local.png)"
         m = _match_from(text)
-        result = _replace_image_match(m, None, Path("/tmp"), _make_spec(pre_filter=pre_filter), [0])
+        result = _replace_image_match(m, None, Path("/tmp"), _make_spec(pre_filter=pre_filter), count(1))
         assert result == "FILTERED"
 
     def test_missing_file_raises(self) -> None:
         text = "![alt](/tmp/nonexistent_xyz_999.png)"
         m = _match_from(text)
         with pytest.raises(_TestImageError, match="file not found"):
-            _replace_image_match(m, None, Path("/tmp"), _make_spec(), [0])
+            _replace_image_match(m, None, Path("/tmp"), _make_spec(), count(1))
 
     def test_successful_conversion(self) -> None:
         with tempfile.TemporaryDirectory() as workdir:
@@ -143,10 +144,8 @@ class TestReplaceImageMatch:
 
             text = f"![photo]({img})"
             m = _match_from(text)
-            counter: list[int] = [0]
-            result = _replace_image_match(m, None, tmpdir, _make_spec(), counter)
+            result = _replace_image_match(m, None, tmpdir, _make_spec(), count(1))
 
-            assert counter[0] == 1
             assert "test_1.out" in result
             assert (tmpdir / "test_1.out").exists()
 
@@ -160,9 +159,8 @@ class TestReplaceImageMatch:
 
             text = f"![photo]({img})"
             m = _match_from(text)
-            counter: list[int] = [5]
-            _replace_image_match(m, None, tmpdir, _make_spec(), counter)
-            assert counter[0] == 6
+            result = _replace_image_match(m, None, tmpdir, _make_spec(), count(6))
+            assert "test_6.out" in result
 
     def test_convert_fn_called_with_correct_paths(self) -> None:
         called_with: list[tuple[Path, Path]] = []
@@ -180,7 +178,7 @@ class TestReplaceImageMatch:
 
             text = f"![photo]({img})"
             m = _match_from(text)
-            _replace_image_match(m, None, tmpdir, _make_spec(convert_fn=tracking_convert), [0])
+            _replace_image_match(m, None, tmpdir, _make_spec(convert_fn=tracking_convert), count(1))
 
             assert len(called_with) == 1
             assert called_with[0][0] == img

@@ -128,10 +128,10 @@ class TestPdfTitleSanitization:
     @given(payload=st.text(min_size=1, max_size=50))
     def test_escaped_title_cannot_contain_raw_backslash_commands(self, payload: str) -> None:
         r"""After escaping, no raw \command sequences survive."""
-        from obsidian_export.pipeline.latex_header import _escape_latex
+        from obsidian_export.pipeline.latex_escape import escape_latex
 
         title = f"\\input{{{payload}}}"
-        escaped = _escape_latex(title)
+        escaped = escape_latex(title)
         assert not escaped.startswith("\\input")
 
 
