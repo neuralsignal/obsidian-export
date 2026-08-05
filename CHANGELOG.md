@@ -20,6 +20,21 @@
 * bump Pillow pin to `>=12.3.0,<13` to fix 5 known vulnerabilities in 12.2.0 ([#236](https://github.com/neuralsignal/obsidian-export/issues/236))
 * bump pymdown-extensions pin to `>=11.0.0,<12` to fix CVE-2026-61632 ([#248](https://github.com/neuralsignal/obsidian-export/issues/248))
 
+## [0.6.3](https://github.com/neuralsignal/obsidian-export/compare/v0.6.2...v0.6.3) (2026-08-03)
+
+
+### Bug Fixes
+
+* escape LaTeX in PDF metadata title to prevent injection ([#239](https://github.com/neuralsignal/obsidian-export/issues/239)) ([a0b434e](https://github.com/neuralsignal/obsidian-export/commit/a0b434eea9780c34ca9a9d91e20e3872c6406d9a))
+* require explicit heading_styles and title_style fields ([f06d474](https://github.com/neuralsignal/obsidian-export/commit/f06d4743e96b570242a9f212ff83db40d549f085)), closes [#253](https://github.com/neuralsignal/obsidian-export/issues/253)
+* upgrade pymdown-extensions to &gt;=11.0.0 for CVE-2026-61632 ([#248](https://github.com/neuralsignal/obsidian-export/issues/248)) ([9b53c65](https://github.com/neuralsignal/obsidian-export/commit/9b53c65df3d4509735fb751782098770a306bb02))
+* validate absolute native-format image paths against root ([#246](https://github.com/neuralsignal/obsidian-export/issues/246)) ([44f343a](https://github.com/neuralsignal/obsidian-export/commit/44f343a02123c08d07f0aa33138c8ac67e41d4a9))
+
+
+### Documentation
+
+* document stage 1 title deduplication ([c884eb3](https://github.com/neuralsignal/obsidian-export/commit/c884eb39bdf2bc544a5bfde0af5d8b85c769f34e)), closes [#249](https://github.com/neuralsignal/obsidian-export/issues/249)
+
 ## [0.6.2](https://github.com/neuralsignal/obsidian-export/compare/v0.6.1...v0.6.2) (2026-07-13)
 
 
