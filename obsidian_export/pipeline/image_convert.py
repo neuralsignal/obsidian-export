@@ -20,7 +20,7 @@ class ImageConversionSpec:
     out_ext: str
     label: str
     not_found_error: type[ObsidianExportError]
-    pre_filter: Callable[[re.Match[str]], str | None]
+    pre_filter: Callable[[re.Match[str]], str | None] | None
 
 
 def _is_url(raw_path: str) -> bool:
@@ -59,9 +59,10 @@ def _replace_image_match(
     if _is_url(img_raw):
         return m.group(0)
 
-    filtered = spec.pre_filter(m)
-    if filtered is not None:
-        return filtered
+    if spec.pre_filter is not None:
+        filtered = spec.pre_filter(m)
+        if filtered is not None:
+            return filtered
 
     img_path = _resolve_image_path(img_raw, resource_path, spec.label)
 
@@ -84,9 +85,9 @@ def convert_image_references(
 ) -> str:
     """Scan body for image references matching spec.pattern and convert each.
 
-    spec.pre_filter receives each non-URL match before path resolution. Return a
-    string to use as the replacement (skipping conversion), or None to proceed
-    with the standard resolve-guard-convert flow.
+    When spec.pre_filter is set, it receives each non-URL match before path
+    resolution. Return a string to use as the replacement (skipping conversion),
+    or None to proceed with the standard resolve-guard-convert flow.
     """
     counter = count(1)
 
