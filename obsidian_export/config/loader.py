@@ -56,10 +56,9 @@ def parse_brand_colors(raw: dict[str, Any]) -> tuple[tuple[str, int, int, int], 
 
 def parse_heading_styles(raw: list[dict[str, Any]]) -> tuple[HeadingStyle, ...]:
     """Parse list of heading style dicts into tuple of HeadingStyle."""
-    for h in raw:
-        validate_heading_level(h["level"])
     results: list[HeadingStyle] = []
     for h in raw:
+        validate_heading_level(h["level"])
         try:
             results.append(
                 HeadingStyle(
