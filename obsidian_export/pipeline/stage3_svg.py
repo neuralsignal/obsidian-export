@@ -43,7 +43,7 @@ def _convert_svg_images(body: str, tmpdir: Path, resource_path: Path | None, rsv
         out_ext=file_ext,
         label="SVG",
         not_found_error=SVGConversionError,
-        pre_filter=lambda _m: None,
+        pre_filter=None,
     )
     return convert_image_references(body, tmpdir, resource_path, spec)
 

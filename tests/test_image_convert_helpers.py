@@ -2,6 +2,7 @@
 
 import re
 import tempfile
+from collections.abc import Callable
 from itertools import count
 from pathlib import Path
 
@@ -28,13 +29,9 @@ def _noop_convert(src: Path, dst: Path) -> None:
     dst.write_bytes(b"converted")
 
 
-def _noop_pre_filter(_m: re.Match[str]) -> None:
-    return None
-
-
 def _make_spec(
-    pre_filter=_noop_pre_filter,
-    convert_fn=_noop_convert,
+    pre_filter: Callable[[re.Match[str]], str | None] | None = None,
+    convert_fn: Callable[[Path, Path], None] = _noop_convert,
 ) -> ImageConversionSpec:
     return ImageConversionSpec(
         pattern=_IMG_RE,
