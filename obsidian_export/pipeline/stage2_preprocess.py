@@ -100,23 +100,20 @@ def process_urls(text: str, strategy: str, threshold: int) -> str:
     if strategy == "keep":
         return text
 
-    def replace_url(m: re.Match) -> str:
-        """Replace a bare URL match according to the active footnote strategy.
-
-        Receives a match whose group(1) is the URL. Returns either the original
-        match unchanged or a Pandoc footnote-formatted replacement string.
-        """
-        url = m.group(1)
-        if strategy == "footnote_all" or (strategy == "footnote_long" and len(url) > threshold):
-            # Pandoc footnote syntax: [^N] — but inline footnotes are cleaner
-            footnote_id = abs(hash(url)) % 100000
-            return f"[link]({url})[^url-{footnote_id}]\n\n[^url-{footnote_id}]: <{url}>"
-        return m.group(0)
-
     if strategy == "strip":
         return _BARE_URL_RE.sub("", text)
 
-    # For footnote strategies, wrap in angle brackets first (Pandoc autolinks)
+    footnotes: dict[str, int] = {}
+
+    def replace_url(m: re.Match) -> str:
+        url = m.group(1)
+        if strategy == "footnote_all" or (strategy == "footnote_long" and len(url) > threshold):
+            if url not in footnotes:
+                footnotes[url] = abs(hash(url)) % 100000
+            footnote_id = footnotes[url]
+            return f"[link]({url})[^url-{footnote_id}]"
+        return m.group(0)
+
     segments = _split_preserve_code(text)
     result = []
     for is_code, segment in segments:
@@ -124,7 +121,14 @@ def process_urls(text: str, strategy: str, threshold: int) -> str:
             result.append(segment)
             continue
         result.append(_BARE_URL_RE.sub(replace_url, segment))
-    return "".join(result)
+
+    processed = "".join(result)
+
+    if footnotes:
+        definitions = "\n".join(f"[^url-{fid}]: <{url}>" for url, fid in footnotes.items())
+        processed = processed.rstrip("\n") + "\n\n" + definitions + "\n"
+
+    return processed
 
 
 def normalize_line_endings(text: str) -> str:

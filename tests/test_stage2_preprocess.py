@@ -136,6 +136,31 @@ class TestProcessUrls:
         result = process_urls(text, "footnote_all", 60)
         assert result != text
 
+    def test_footnote_all_no_duplicate_definitions(self) -> None:
+        url = "https://example.com/page"
+        text = f"First {url} and second {url} reference."
+        result = process_urls(text, "footnote_all", 60)
+        footnote_id = abs(hash(url)) % 100000
+        definition = f"[^url-{footnote_id}]: <{url}>"
+        assert result.count(definition) == 1
+        assert result.count(f"[^url-{footnote_id}]") == 3  # 2 refs + 1 def
+
+    def test_footnote_long_no_duplicate_definitions(self) -> None:
+        url = "https://docs.microsoft.com/en-us/azure/cognitive-search/search-what-is-azure-search-very-long"
+        text = f"First {url} then {url} again."
+        result = process_urls(text, "footnote_long", 60)
+        footnote_id = abs(hash(url)) % 100000
+        definition = f"[^url-{footnote_id}]: <{url}>"
+        assert result.count(definition) == 1
+
+    def test_footnote_definitions_appended_at_end(self) -> None:
+        url = "https://example.com"
+        text = f"See {url} for details."
+        result = process_urls(text, "footnote_all", 60)
+        footnote_id = abs(hash(url)) % 100000
+        definition = f"[^url-{footnote_id}]: <{url}>"
+        assert result.rstrip().endswith(definition)
+
 
 # ── normalize_line_endings ────────────────────────────────────────────────────
 
