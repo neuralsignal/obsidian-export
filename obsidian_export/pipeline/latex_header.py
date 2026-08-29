@@ -10,6 +10,14 @@ from obsidian_export.pipeline.latex_escape import (
     validate_latex_value,
 )
 
+_HEADER_FOOTER_LATEX_CMDS: dict[str, str] = {
+    "header_left": "\\fancyhead[L]",
+    "header_right": "\\fancyhead[R]",
+    "footer_left": "\\fancyfoot[L]",
+    "footer_center": "\\fancyfoot[C]",
+    "footer_right": "\\fancyfoot[R]",
+}
+
 
 def render_header(style: StyleConfig, template_path: Path, title: str) -> str:
     """Read header.tex template and substitute config values.
@@ -24,19 +32,15 @@ def render_header(style: StyleConfig, template_path: Path, title: str) -> str:
 
     # Logo path is now resolved to absolute during config loading
     logo_path = style.logo if style.logo else ""
-    header_left = substitute_placeholders(style.header_left, title, logo_path)
-    header_right = substitute_placeholders(style.header_right, title, logo_path)
-    footer_left = substitute_placeholders(style.footer_left, title, logo_path)
-    footer_center = substitute_placeholders(style.footer_center, title, logo_path)
-    footer_right = substitute_placeholders(style.footer_right, title, logo_path)
+    hf_values = {
+        field: substitute_placeholders(getattr(style, field), title, logo_path) for field in _HEADER_FOOTER_LATEX_CMDS
+    }
 
     unicode_char_block = _build_unicode_char_block(style.unicode_chars)
     font_block = _build_font_block(style.mainfont, style.sansfont, style.monofont)
     greek_fallback_block = _build_greek_fallback_block(style.greek_font)
     line_spacing_block = _build_line_spacing_block(style.line_spacing)
-    header_footer_block = _build_header_footer_block(
-        header_left, header_right, footer_left, footer_center, footer_right
-    )
+    header_footer_block = _build_header_footer_block(hf_values)
     brand_colors_block = _build_brand_colors_block(style.brand_colors)
     heading_styles_block = _build_heading_styles_block(style.heading_styles)
     title_style_block = _build_title_style_block(style.title_style)
@@ -190,21 +194,8 @@ def _build_code_block(code_fontsize: str) -> str:
     )
 
 
-def _build_header_footer_block(
-    header_left: str,
-    header_right: str,
-    footer_left: str,
-    footer_center: str,
-    footer_right: str,
-) -> str:
+def _build_header_footer_block(fields: dict[str, str]) -> str:
     """Generate fancyhdr package setup with configured header/footer fields."""
-    fields = {
-        "header_left": header_left,
-        "header_right": header_right,
-        "footer_left": footer_left,
-        "footer_center": footer_center,
-        "footer_right": footer_right,
-    }
     validate_header_footer_values(fields)
 
     if not any(fields.values()):
@@ -214,15 +205,9 @@ def _build_header_footer_block(
         "\\pagestyle{fancy}",
         "\\fancyhf{}",
     ]
-    if header_left:
-        lines.append(f"\\fancyhead[L]{{{header_left}}}")
-    if header_right:
-        lines.append(f"\\fancyhead[R]{{{header_right}}}")
-    if footer_left:
-        lines.append(f"\\fancyfoot[L]{{{footer_left}}}")
-    if footer_center:
-        lines.append(f"\\fancyfoot[C]{{{footer_center}}}")
-    if footer_right:
-        lines.append(f"\\fancyfoot[R]{{{footer_right}}}")
+    for field_name, latex_cmd in _HEADER_FOOTER_LATEX_CMDS.items():
+        value = fields.get(field_name, "")
+        if value:
+            lines.append(f"{latex_cmd}{{{value}}}")
     lines.append("\\renewcommand{\\headrulewidth}{0pt}")
     return "\n".join(lines)
