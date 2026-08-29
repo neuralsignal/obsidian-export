@@ -256,11 +256,23 @@ class TestValidateHeaderFooterValues:
 
 
 class TestBuildHeaderFooterBlock:
+    @staticmethod
+    def _empty_fields(**overrides: str) -> dict[str, str]:
+        fields = {
+            "header_left": "",
+            "header_right": "",
+            "footer_left": "",
+            "footer_center": "",
+            "footer_right": "",
+        }
+        fields.update(overrides)
+        return fields
+
     def test_all_empty_returns_empty(self) -> None:
-        assert _build_header_footer_block("", "", "", "", "") == ""
+        assert _build_header_footer_block(self._empty_fields()) == ""
 
     def test_footer_center_only(self) -> None:
-        result = _build_header_footer_block("", "", "", "\\thepage", "")
+        result = _build_header_footer_block(self._empty_fields(footer_center="\\thepage"))
         assert "\\usepackage{fancyhdr}" in result
         assert "\\pagestyle{fancy}" in result
         assert "\\fancyfoot[C]{\\thepage}" in result
@@ -268,13 +280,20 @@ class TestBuildHeaderFooterBlock:
         assert "\\fancyhead[R]" not in result
 
     def test_header_left_and_right(self) -> None:
-        result = _build_header_footer_block("Left Text", "Right Text", "", "", "")
+        result = _build_header_footer_block(self._empty_fields(header_left="Left Text", header_right="Right Text"))
         assert "\\fancyhead[L]{Left Text}" in result
         assert "\\fancyhead[R]{Right Text}" in result
         assert "\\fancyfoot[C]" not in result
 
     def test_all_five(self) -> None:
-        result = _build_header_footer_block("HL", "HR", "FL", "FC", "FR")
+        fields = {
+            "header_left": "HL",
+            "header_right": "HR",
+            "footer_left": "FL",
+            "footer_center": "FC",
+            "footer_right": "FR",
+        }
+        result = _build_header_footer_block(fields)
         assert "\\fancyhead[L]{HL}" in result
         assert "\\fancyhead[R]{HR}" in result
         assert "\\fancyfoot[L]{FL}" in result
@@ -283,33 +302,33 @@ class TestBuildHeaderFooterBlock:
         assert "\\renewcommand{\\headrulewidth}{0pt}" in result
 
     def test_footer_left_and_right(self) -> None:
-        result = _build_header_footer_block("", "", "Left", "", "Right")
+        result = _build_header_footer_block(self._empty_fields(footer_left="Left", footer_right="Right"))
         assert "\\fancyfoot[L]{Left}" in result
         assert "\\fancyfoot[R]{Right}" in result
         assert "\\fancyfoot[C]" not in result
 
     def test_no_head_rule(self) -> None:
-        result = _build_header_footer_block("L", "", "", "", "")
+        result = _build_header_footer_block(self._empty_fields(header_left="L"))
         assert "\\renewcommand{\\headrulewidth}{0pt}" in result
 
     @pytest.mark.parametrize(
-        ("field_idx", "field_name"),
-        [
-            (0, "header_left"),
-            (1, "header_right"),
-            (2, "footer_left"),
-            (3, "footer_center"),
-            (4, "footer_right"),
-        ],
+        "field_name",
+        ["header_left", "header_right", "footer_left", "footer_center", "footer_right"],
     )
-    def test_rejects_dangerous_macro_in_each_field(self, field_idx: int, field_name: str) -> None:
-        args = ["", "", "", "", ""]
-        args[field_idx] = "\\input{/etc/passwd}"
+    def test_rejects_dangerous_macro_in_each_field(self, field_name: str) -> None:
+        fields = self._empty_fields(**{field_name: "\\input{/etc/passwd}"})
         with pytest.raises(UnsafeLatexError, match=f"Config field '{field_name}'"):
-            _build_header_footer_block(*args)
+            _build_header_footer_block(fields)
 
     def test_allows_safe_header_footer_values(self) -> None:
-        result = _build_header_footer_block("\\sffamily Title", "2026", "\\textbf{Footer}", "\\thepage", "v1.0")
+        fields = {
+            "header_left": "\\sffamily Title",
+            "header_right": "2026",
+            "footer_left": "\\textbf{Footer}",
+            "footer_center": "\\thepage",
+            "footer_right": "v1.0",
+        }
+        result = _build_header_footer_block(fields)
         assert "\\fancyhead[L]{\\sffamily Title}" in result
         assert "\\fancyfoot[C]{\\thepage}" in result
 
