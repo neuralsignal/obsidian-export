@@ -27,7 +27,7 @@ ruff = ">=0.11,<1"
 pytest-cov = ">=5.0,<6"
 pre-commit = ">=4.0,<5"
 mkdocs = ">=1.6,<2"
-mkdocs-material = ">=9.5,<10"
+mkdocs-material = ">=9.7.7,<10"
 mkdocstrings = {version = ">=1.0,<2", extras = ["python"]}
 pymdown-extensions = ">=11.0.0,<12"
 
