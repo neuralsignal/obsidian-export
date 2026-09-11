@@ -140,26 +140,40 @@ class TestProcessUrls:
         url = "https://example.com/page"
         text = f"First {url} and second {url} reference."
         result = process_urls(text, "footnote_all", 60)
-        footnote_id = abs(hash(url)) % 100000
-        definition = f"[^url-{footnote_id}]: <{url}>"
+        definition = f"[^url-1]: <{url}>"
         assert result.count(definition) == 1
-        assert result.count(f"[^url-{footnote_id}]") == 3  # 2 refs + 1 def
+        assert result.count("[^url-1]") == 3  # 2 refs + 1 def
 
     def test_footnote_long_no_duplicate_definitions(self) -> None:
         url = "https://docs.microsoft.com/en-us/azure/cognitive-search/search-what-is-azure-search-very-long"
         text = f"First {url} then {url} again."
         result = process_urls(text, "footnote_long", 60)
-        footnote_id = abs(hash(url)) % 100000
-        definition = f"[^url-{footnote_id}]: <{url}>"
+        definition = f"[^url-1]: <{url}>"
         assert result.count(definition) == 1
 
     def test_footnote_definitions_appended_at_end(self) -> None:
         url = "https://example.com"
         text = f"See {url} for details."
         result = process_urls(text, "footnote_all", 60)
-        footnote_id = abs(hash(url)) % 100000
-        definition = f"[^url-{footnote_id}]: <{url}>"
+        definition = f"[^url-1]: <{url}>"
         assert result.rstrip().endswith(definition)
+
+    def test_footnote_ids_are_sequential(self) -> None:
+        url_a = "https://example.com/alpha"
+        url_b = "https://example.com/beta"
+        text = f"First {url_a} then {url_b} here."
+        result = process_urls(text, "footnote_all", 60)
+        assert "[^url-1]" in result
+        assert "[^url-2]" in result
+        assert f"[^url-1]: <{url_a}>" in result
+        assert f"[^url-2]: <{url_b}>" in result
+
+    def test_footnote_ids_are_deterministic_across_calls(self) -> None:
+        url = "https://example.com/stable"
+        text = f"See {url} for details."
+        result1 = process_urls(text, "footnote_all", 60)
+        result2 = process_urls(text, "footnote_all", 60)
+        assert result1 == result2
 
 
 # ── normalize_line_endings ────────────────────────────────────────────────────
