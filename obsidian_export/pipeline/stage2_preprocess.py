@@ -1,6 +1,7 @@
 """Stage 2: Text-level pre-processing before Pandoc parses the document."""
 
 import re
+from itertools import count
 
 from obsidian_export.config import ObsidianConfig
 
@@ -104,12 +105,13 @@ def process_urls(text: str, strategy: str, threshold: int) -> str:
         return _BARE_URL_RE.sub("", text)
 
     footnotes: dict[str, int] = {}
+    counter = count(1)
 
     def replace_url(m: re.Match) -> str:
         url = m.group(1)
         if strategy == "footnote_all" or (strategy == "footnote_long" and len(url) > threshold):
             if url not in footnotes:
-                footnotes[url] = abs(hash(url)) % 100000
+                footnotes[url] = next(counter)
             footnote_id = footnotes[url]
             return f"[link]({url})[^url-{footnote_id}]"
         return m.group(0)
