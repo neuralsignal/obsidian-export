@@ -15,7 +15,7 @@ from obsidian_export.pipeline.image_convert import (
     ImageConversionSpec,
     _is_url,
     _replace_image_match,
-    _resolve_image_path,
+    resolve_image_path,
 )
 
 _IMG_RE = re.compile(r"!\[([^\]]*)\]\(([^)]+)\)")
@@ -67,37 +67,52 @@ class TestIsUrl:
             assert path.startswith(("http://", "https://"))
 
 
-# ── _resolve_image_path ──────────────────────────────────────────────────────
+# ── resolve_image_path ───────────────────────────────────────────────────────
 
 
 class TestResolveImagePath:
     def test_absolute_path_returned_as_is(self) -> None:
-        result = _resolve_image_path("/tmp/img.png", resource_path=None, label="Test")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = resolve_image_path("/tmp/img.png", resource_path=None, tmpdir=Path(tmpdir), label="Test")
         assert result == Path("/tmp/img.png")
 
     def test_relative_path_resolved_against_resource_path(self) -> None:
         with tempfile.TemporaryDirectory() as workdir:
             resource = Path(workdir)
-            result = _resolve_image_path("sub/img.png", resource_path=resource, label="Test")
+            with tempfile.TemporaryDirectory() as tmpdir:
+                result = resolve_image_path("sub/img.png", resource_path=resource, tmpdir=Path(tmpdir), label="Test")
             assert result == resource / "sub/img.png"
 
     def test_relative_path_without_resource_path_stays_relative(self) -> None:
-        result = _resolve_image_path("img.png", resource_path=None, label="Test")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = resolve_image_path("img.png", resource_path=None, tmpdir=Path(tmpdir), label="Test")
         assert result == Path("img.png")
 
     def test_path_outside_root_raises(self) -> None:
         with tempfile.TemporaryDirectory() as workdir:
             vault = Path(workdir) / "vault"
             vault.mkdir()
-            with pytest.raises(PathTraversalError):
-                _resolve_image_path("../outside.png", resource_path=vault, label="Test")
+            with tempfile.TemporaryDirectory() as tmpdir, pytest.raises(PathTraversalError):
+                resolve_image_path("../outside.png", resource_path=vault, tmpdir=Path(tmpdir), label="Test")
 
     def test_path_inside_root_succeeds(self) -> None:
         with tempfile.TemporaryDirectory() as workdir:
             vault = Path(workdir)
             (vault / "img.png").touch()
-            result = _resolve_image_path("img.png", resource_path=vault, label="Test")
+            with tempfile.TemporaryDirectory() as tmpdir:
+                result = resolve_image_path("img.png", resource_path=vault, tmpdir=Path(tmpdir), label="Test")
             assert result == vault / "img.png"
+
+    def test_path_in_tmpdir_exempt_from_root_check(self) -> None:
+        with tempfile.TemporaryDirectory() as workdir:
+            vault = Path(workdir) / "vault"
+            vault.mkdir()
+            tmpdir = Path(workdir) / "tmp_out"
+            tmpdir.mkdir()
+            img = tmpdir / "converted.png"
+            img.touch()
+            result = resolve_image_path(str(img), resource_path=vault, tmpdir=tmpdir, label="Test")
+            assert result == img
 
 
 # ── _replace_image_match ─────────────────────────────────────────────────────
