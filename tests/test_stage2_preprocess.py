@@ -7,6 +7,9 @@ from hypothesis import strategies as st
 
 from obsidian_export.config import ObsidianConfig, default_config
 from obsidian_export.pipeline.stage2_preprocess import (
+    _footnote_bare_urls,
+    _should_footnote_url,
+    _strip_bare_urls,
     convert_callouts,
     escape_dollar_signs,
     normalize_line_endings,
@@ -176,6 +179,63 @@ class TestProcessUrls:
         assert result1 == result2
 
 
+# ── _should_footnote_url ─────────────────────────────────────────────────────
+
+
+class TestShouldFootnoteUrl:
+    def test_footnote_all_always_true(self) -> None:
+        assert _should_footnote_url("https://x.io", "footnote_all", 9999) is True
+
+    def test_footnote_long_above_threshold(self) -> None:
+        url = "https://example.com/" + "a" * 100
+        assert _should_footnote_url(url, "footnote_long", 60) is True
+
+    def test_footnote_long_below_threshold(self) -> None:
+        assert _should_footnote_url("https://x.io", "footnote_long", 60) is False
+
+    def test_footnote_long_at_threshold(self) -> None:
+        url = "a" * 60
+        assert _should_footnote_url(url, "footnote_long", 60) is False
+
+    def test_other_strategy_always_false(self) -> None:
+        assert _should_footnote_url("https://x.io", "keep", 60) is False
+
+
+# ── _strip_bare_urls ─────────────────────────────────────────────────────────
+
+
+class TestStripBareUrls:
+    def test_removes_bare_url(self) -> None:
+        result = _strip_bare_urls("See https://example.com for info.")
+        assert "https://" not in result
+
+    def test_preserves_non_url_text(self) -> None:
+        text = "No URLs here, just text."
+        assert _strip_bare_urls(text) == text
+
+
+# ── _footnote_bare_urls ──────────────────────────────────────────────────────
+
+
+class TestFootnoteBareUrls:
+    def test_creates_footnote_reference(self) -> None:
+        result = _footnote_bare_urls("See https://example.com here.", "footnote_all", 60)
+        assert "[^url-1]" in result
+        assert "[^url-1]: <https://example.com>" in result
+
+    def test_skips_code_blocks(self) -> None:
+        text = "```\nhttps://example.com\n```"
+        result = _footnote_bare_urls(text, "footnote_all", 60)
+        assert "[^url-" not in result
+
+    def test_deduplicates_same_url(self) -> None:
+        url = "https://example.com/page"
+        text = f"First {url} and second {url} end."
+        result = _footnote_bare_urls(text, "footnote_all", 60)
+        assert result.count(f"[^url-1]: <{url}>") == 1
+        assert "[^url-2]" not in result
+
+
 # ── normalize_line_endings ────────────────────────────────────────────────────
 
 
@@ -234,3 +294,45 @@ def test_callout_never_raises(text: str) -> None:
 @settings(max_examples=100)
 def test_normalize_never_raises(text: str) -> None:
     normalize_line_endings(text)
+
+
+@given(
+    url=st.from_regex(r"https?://[a-z0-9]{1,50}", fullmatch=True),
+    strategy=st.sampled_from(["footnote_all", "footnote_long", "keep", "strip"]),
+    threshold=st.integers(min_value=0, max_value=500),
+)
+@settings(max_examples=200)
+def test_should_footnote_url_is_pure_bool(url: str, strategy: str, threshold: int) -> None:
+    result = _should_footnote_url(url, strategy, threshold)
+    assert isinstance(result, bool)
+
+
+@given(
+    url=st.from_regex(r"https?://[a-z0-9]{1,50}", fullmatch=True),
+    threshold=st.integers(min_value=0, max_value=500),
+)
+@settings(max_examples=200)
+def test_footnote_all_always_footnotes(url: str, threshold: int) -> None:
+    assert _should_footnote_url(url, "footnote_all", threshold) is True
+
+
+@given(
+    url=st.from_regex(r"https?://[a-z0-9]{1,50}", fullmatch=True),
+    threshold=st.integers(min_value=0, max_value=500),
+)
+@settings(max_examples=200)
+def test_footnote_long_respects_threshold(url: str, threshold: int) -> None:
+    result = _should_footnote_url(url, "footnote_long", threshold)
+    assert result == (len(url) > threshold)
+
+
+@given(st.text())
+@settings(max_examples=100)
+def test_strip_bare_urls_never_raises(text: str) -> None:
+    _strip_bare_urls(text)
+
+
+@given(st.text())
+@settings(max_examples=100)
+def test_footnote_bare_urls_never_raises(text: str) -> None:
+    _footnote_bare_urls(text, "footnote_all", 60)
