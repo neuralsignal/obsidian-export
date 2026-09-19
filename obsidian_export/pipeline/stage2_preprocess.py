@@ -89,31 +89,29 @@ def convert_callouts(text: str) -> str:
     return _CALLOUT_HEADER_RE.sub(_callout_replacement, text)
 
 
-def process_urls(text: str, strategy: str, threshold: int) -> str:
-    """Handle bare URLs in text according to strategy.
+def _should_footnote_url(url: str, strategy: str, threshold: int) -> bool:
+    """Decide whether a URL should be converted to a footnote reference."""
+    if strategy == "footnote_all":
+        return True
+    return strategy == "footnote_long" and len(url) > threshold
 
-    Strategies:
-      keep          — leave as-is
-      footnote_long — move URLs longer than threshold to footnotes
-      footnote_all  — move all URLs to footnotes
-      strip         — remove bare URLs entirely
-    """
-    if strategy == "keep":
-        return text
 
-    if strategy == "strip":
-        return _BARE_URL_RE.sub("", text)
+def _strip_bare_urls(text: str) -> str:
+    """Remove all bare URLs from text."""
+    return _BARE_URL_RE.sub("", text)
 
+
+def _footnote_bare_urls(text: str, strategy: str, threshold: int) -> str:
+    """Replace bare URLs with footnote references, skipping code blocks."""
     footnotes: dict[str, int] = {}
     counter = count(1)
 
     def replace_url(m: re.Match) -> str:
         url = m.group(1)
-        if strategy == "footnote_all" or (strategy == "footnote_long" and len(url) > threshold):
+        if _should_footnote_url(url, strategy, threshold):
             if url not in footnotes:
                 footnotes[url] = next(counter)
-            footnote_id = footnotes[url]
-            return f"[link]({url})[^url-{footnote_id}]"
+            return f"[link]({url})[^url-{footnotes[url]}]"
         return m.group(0)
 
     segments = _split_preserve_code(text)
@@ -131,6 +129,22 @@ def process_urls(text: str, strategy: str, threshold: int) -> str:
         processed = processed.rstrip("\n") + "\n\n" + definitions + "\n"
 
     return processed
+
+
+def process_urls(text: str, strategy: str, threshold: int) -> str:
+    """Handle bare URLs in text according to strategy.
+
+    Strategies:
+      keep          — leave as-is
+      footnote_long — move URLs longer than threshold to footnotes
+      footnote_all  — move all URLs to footnotes
+      strip         — remove bare URLs entirely
+    """
+    if strategy == "keep":
+        return text
+    if strategy == "strip":
+        return _strip_bare_urls(text)
+    return _footnote_bare_urls(text, strategy, threshold)
 
 
 def normalize_line_endings(text: str) -> str:
