@@ -28,18 +28,23 @@ def _is_url(raw_path: str) -> bool:
     return raw_path.startswith(("http://", "https://"))
 
 
-def _resolve_image_path(
+def resolve_image_path(
     img_raw: str,
     resource_path: Path | None,
+    tmpdir: Path,
     label: str,
 ) -> Path:
-    """Resolve a raw image path against resource_path and validate root containment."""
+    """Resolve a raw image path against resource_path and validate root containment.
+
+    Paths that resolve within tmpdir are exempt from root containment checks
+    because they were placed there by a prior conversion stage.
+    """
     img_path = Path(img_raw)
 
     if not img_path.is_absolute() and resource_path is not None:
         img_path = resource_path / img_path
 
-    if resource_path is not None:
+    if resource_path is not None and not img_path.resolve().is_relative_to(tmpdir.resolve()):
         assert_within_root(img_path, resource_path, label)
 
     return img_path
@@ -64,7 +69,7 @@ def _replace_image_match(
         if filtered is not None:
             return filtered
 
-    img_path = _resolve_image_path(img_raw, resource_path, spec.label)
+    img_path = resolve_image_path(img_raw, resource_path, tmpdir, spec.label)
 
     if not img_path.exists():
         raise spec.not_found_error(f"{spec.label} file not found: {img_path}")

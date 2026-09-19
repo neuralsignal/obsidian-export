@@ -334,6 +334,20 @@ class TestPathTraversal:
             result = convert_images_for_pdf(text, tmpdir, resource_path=vault)
             assert "img_1.png" in result
 
+    def test_native_image_in_tmpdir_exempt_from_root_check(self) -> None:
+        with tempfile.TemporaryDirectory() as workdir:
+            workdir = Path(workdir)
+            vault = workdir / "vault"
+            vault.mkdir()
+            tmpdir = workdir / "out"
+            tmpdir.mkdir()
+            img = tmpdir / "svg_1.pdf"
+            img.write_bytes(b"fake pdf")
+
+            text = f"![converted]({img})\n"
+            result = convert_images_for_pdf(text, tmpdir, resource_path=vault)
+            assert str(img) in result
+
 
 # ── Error handling ───────────────────────────────────────────────────────────
 

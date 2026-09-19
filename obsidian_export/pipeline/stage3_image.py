@@ -14,8 +14,7 @@ from pathlib import Path
 from PIL import Image
 
 from obsidian_export.exceptions import ImageConversionError
-from obsidian_export.pipeline.image_convert import ImageConversionSpec, convert_image_references
-from obsidian_export.pipeline.path_guards import assert_within_root
+from obsidian_export.pipeline.image_convert import ImageConversionSpec, convert_image_references, resolve_image_path
 
 PDF_NATIVE_EXTENSIONS = frozenset({".png", ".jpg", ".jpeg", ".pdf"})
 DOCX_NATIVE_EXTENSIONS = frozenset({".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff", ".tif"})
@@ -42,22 +41,14 @@ def convert_images(
     """
 
     def _pre_filter(m: re.Match[str]) -> str | None:
-        img_path = Path(m.group(2))
-        ext = img_path.suffix.lower()
+        ext = Path(m.group(2)).suffix.lower()
 
         if ext == ".svg":
             return m.group(0)
 
         if not _needs_conversion(ext, native_extensions):
-            if not img_path.is_absolute() and resource_path is not None:
-                abs_path = resource_path / img_path
-                assert_within_root(abs_path, resource_path, "Image")
-                return f"![{m.group(1)}]({abs_path})"
-            if img_path.is_absolute() and resource_path is not None:
-                resolved = img_path.resolve()
-                if not resolved.is_relative_to(tmpdir.resolve()):
-                    assert_within_root(img_path, resource_path, "Image")
-            return m.group(0)
+            resolved = resolve_image_path(m.group(2), resource_path, tmpdir, "Image")
+            return f"![{m.group(1)}]({resolved})"
 
         return None
 
