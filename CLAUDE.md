@@ -223,3 +223,8 @@ Steps needed before agent workflows can run tests:
 ```
 stage1 (vault) → stage2 (preprocess) → stage3 (mermaid+svg) → stage4 (pandoc) → output (PDF/DOCX)
 ```
+
+## TL;DR section
+
+End every reply with a `## TL;DR` section: one or two lines carrying the decision — the
+verdict, the recommendation, or what the reader now has to decide. Not a recap of the work.
