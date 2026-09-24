@@ -18,6 +18,7 @@ class PandocInvocation:
 
     text: str
     title: str
+    lang: str | None
     pandoc_config: PandocConfig
     style_config: StyleConfig
     filters_dir: Path
@@ -52,6 +53,9 @@ def _run_pandoc(
 
     invocation.output_path.parent.mkdir(parents=True, exist_ok=True)
 
+    # pandoc's `lang` selects LaTeX babel hyphenation patterns and the DOCX document language.
+    if invocation.lang is not None:
+        metadata = {**metadata, "lang": invocation.lang}
     text = _yaml_metadata_block(metadata) + invocation.text
 
     cmd = [

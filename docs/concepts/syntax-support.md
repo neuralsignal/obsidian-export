@@ -10,7 +10,7 @@ obsidian-export handles these Obsidian-specific syntax elements during conversio
 | `> [!note]` callouts | Colored boxes (PDF) or blockquotes (DOCX) |
 | `` ```mermaid `` | Rendered to PNG |
 | `## Relations` section | Removed |
-| YAML frontmatter | Title extracted, tags converted to keywords, rest removed |
+| YAML frontmatter | Title extracted, `lang` passed to pandoc (hyphenation, DOCX language), tags converted to keywords, rest removed |
 | `$25/user` | Safe literal dollar sign (no LaTeX math) |
 
 ## Wikilink Handling

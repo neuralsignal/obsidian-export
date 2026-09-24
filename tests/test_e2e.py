@@ -175,6 +175,7 @@ class TestPdfE2E:
         invocation = PandocInvocation(
             text=body,
             title="Branded Test",
+            lang=None,
             pandoc_config=config.pandoc,
             style_config=style,
             filters_dir=FILTERS_DIR,

@@ -139,3 +139,17 @@ class TestRunUnsupportedFormat:
                 output_format="html",
                 config=None,  # type: ignore[arg-type]  # never reached
             )
+
+
+class TestRunForwardsFrontmatterLang:
+    """run() hands the frontmatter ``lang`` to stage 4, or None when the note sets none."""
+
+    @pytest.mark.parametrize(("frontmatter", "expected"), [("lang: de\n", "de"), ("", None)])
+    def test_lang_reaches_invocation(self, frontmatter: str, expected: str | None, tmp_path: Path) -> None:
+        from obsidian_export.config import default_config
+
+        note = tmp_path / "note.md"
+        note.write_text(f"---\ntitle: Note\n{frontmatter}---\n\nUnternehmenskonten.\n", encoding="utf-8")
+        with patch("obsidian_export.convert_to_docx") as mock_convert:
+            run(note, tmp_path / "note.docx", "docx", default_config())
+        assert mock_convert.call_args[0][0].lang == expected
