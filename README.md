@@ -201,7 +201,7 @@ run(Path("my_note.md"), Path("output.pdf"), "pdf", config)
 | `> [!note]` callouts | Colored boxes (PDF) or blockquotes (DOCX) |
 | `` ```mermaid `` | Rendered to PNG |
 | `## Relations` section | Removed |
-| YAML frontmatter | Title extracted, tags → keywords, rest removed |
+| YAML frontmatter | Title extracted, `lang` passed to pandoc (hyphenation, DOCX language), tags → keywords, rest removed |
 | `$25/user` | Safe literal dollar sign |
 
 ## License

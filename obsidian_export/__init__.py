@@ -86,6 +86,8 @@ def run(
     # many knowledge notes omit it, so we fall back to the filename stem.
     title = str(fm.get("title", input_path.stem))
     body = strip_leading_title(body, title)
+    # Optional like title; absent means pandoc's own default (English hyphenation).
+    lang = str(fm["lang"]) if "lang" in fm else None
     vault_root = input_path.parent
     body = resolve_embeds(body, vault_root, input_path, config.obsidian.max_embed_depth)
     body = strip_obsidian_syntax(body)
@@ -117,6 +119,7 @@ def run(
         invocation = PandocInvocation(
             text=body,
             title=title,
+            lang=lang,
             pandoc_config=config.pandoc,
             style_config=config.style,
             filters_dir=filters_dir,

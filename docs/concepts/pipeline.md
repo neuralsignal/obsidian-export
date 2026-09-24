@@ -19,6 +19,7 @@ Handles Obsidian-specific vault operations:
 
 - **Frontmatter parsing** — extracts YAML frontmatter, cleans tags into keywords
 - **Title extraction** — uses frontmatter `title` or falls back to filename stem
+- **Language** — frontmatter `lang` (e.g. `de`) is forwarded to pandoc for LaTeX hyphenation and the DOCX document language; omitted when absent
 - **Title deduplication** — strips the leading H1 heading if it matches the document title (prevents duplicate titles in output)
 - **Embed resolution** — recursively resolves `![[embed]]` references with circular reference detection
 - **Syntax stripping** — converts `[[wikilinks]]` to plain text, removes `## Relations` sections

@@ -51,6 +51,7 @@ def _make_invocation(tmp_path: Path, text: str, title: str, output_name: str, fi
     return PandocInvocation(
         text=text,
         title=title,
+        lang=None,
         pandoc_config=_make_pandoc_config(),
         style_config=_make_style_config(),
         filters_dir=filters_dir,
@@ -133,6 +134,36 @@ class TestPdfTitleSanitization:
         title = f"\\input{{{payload}}}"
         escaped = escape_latex(title)
         assert not escaped.startswith("\\input")
+
+
+def _metadata_sent_to_pandoc(convert: str, lang: str | None, tmp_path: Path) -> dict:
+    """Run a conversion with pandoc stubbed out; return the YAML metadata block it received."""
+    inv = dataclasses.replace(
+        _make_invocation(tmp_path, SAMPLE_TEXT, "Test", f"output.{convert}", FILTERS_DIR),
+        lang=lang,
+    )
+    with patch("obsidian_export.pipeline.stage4_pandoc.subprocess.run") as mock_run:
+        if convert == "pdf":
+            convert_to_pdf(inv, "")
+        else:
+            convert_to_docx(inv, reference_doc=None)
+    stdin = mock_run.call_args.kwargs["input"]
+    return yaml.safe_load(stdin.split("---\n")[1])
+
+
+class TestLangForwarding:
+    """Frontmatter ``lang`` must reach pandoc; LaTeX hyphenation and DOCX language depend on it."""
+
+    @pytest.mark.parametrize("convert", ["pdf", "docx"])
+    @given(lang=st.from_regex(r"[a-z]{2,3}(-[A-Z]{2})?", fullmatch=True))
+    def test_lang_forwarded_when_set(self, convert: str, lang: str, tmp_path_factory: pytest.TempPathFactory) -> None:
+        metadata = _metadata_sent_to_pandoc(convert, lang, tmp_path_factory.mktemp("lang"))
+        assert metadata["lang"] == lang
+
+    @pytest.mark.parametrize("convert", ["pdf", "docx"])
+    def test_lang_absent_when_unset(self, convert: str, tmp_path: Path) -> None:
+        metadata = _metadata_sent_to_pandoc(convert, None, tmp_path)
+        assert "lang" not in metadata
 
 
 class TestConvertToDocx:
