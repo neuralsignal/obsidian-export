@@ -23,7 +23,7 @@ dependencies = [
     "pyyaml>=6.0,<7",
     "click>=8.0,<9",
     "Pillow>=12.3.0,<13",
-    "urllib3>=2.7.0,<3",
+    "urllib3>=2.8.0,<3",
     "idna>=3.15,<4",
 ]
 
