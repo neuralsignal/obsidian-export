@@ -77,7 +77,7 @@ class TestRenderMermaidBlocks:
 
     def test_missing_mmdc_raises(self, tmp_path: Path) -> None:
         config = _make_config(tmp_path / "nonexistent_mmdc", 3)
-        with pytest.raises(FileNotFoundError, match="mmdc binary not found"):
+        with pytest.raises(MermaidRenderError, match="mmdc binary not found"):
             render_mermaid_blocks("```mermaid\ngraph TB\n    A-->B\n```", config, tmp_path)
 
     def test_image_files_written_to_tmpdir(self, tmp_path: Path) -> None:

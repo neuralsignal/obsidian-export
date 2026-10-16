@@ -14,8 +14,7 @@ _MERMAID_BLOCK_RE = re.compile(r"```mermaid\n(.*?)```", re.DOTALL)
 def render_mermaid_blocks(body: str, config: MermaidConfig, tmpdir: Path) -> str:
     """Replace ```mermaid blocks with rendered PNG image references.
 
-    Raises FileNotFoundError if mmdc binary is not found.
-    Raises subprocess.CalledProcessError if mmdc rendering fails.
+    Raises MermaidRenderError if mmdc binary is not found or rendering fails.
     """
     mmdc = config.mmdc_bin
 
@@ -29,7 +28,7 @@ def render_mermaid_blocks(body: str, config: MermaidConfig, tmpdir: Path) -> str
         a markdown image reference to the output file.
         """
         if not mmdc.exists():
-            raise FileNotFoundError(
+            raise MermaidRenderError(
                 f"mmdc binary not found at {mmdc}. Install: npm install --prefix .mmdc @mermaid-js/mermaid-cli"
             )
         diagram_src = m.group(1)
