@@ -20,6 +20,15 @@
 * bump Pillow pin to `>=12.3.0,<13` to fix 5 known vulnerabilities in 12.2.0 ([#236](https://github.com/neuralsignal/obsidian-export/issues/236))
 * bump pymdown-extensions pin to `>=11.0.0,<12` to fix CVE-2026-61632 ([#248](https://github.com/neuralsignal/obsidian-export/issues/248))
 
+## [0.6.7](https://github.com/neuralsignal/obsidian-export/compare/v0.6.6...v0.6.7) (2026-10-23)
+
+
+### Bug Fixes
+
+* bump urllib3 lower bound to 2.8.0 for 3 high-severity CVEs ([#288](https://github.com/neuralsignal/obsidian-export/issues/288)) ([#290](https://github.com/neuralsignal/obsidian-export/issues/290)) ([b684a6b](https://github.com/neuralsignal/obsidian-export/commit/b684a6ba58fa44fe43d019aff66fa0e81f2096f1))
+* pin virtualenv &gt;=21.7.13 to resolve 4 high-severity CVEs ([#289](https://github.com/neuralsignal/obsidian-export/issues/289)) ([#291](https://github.com/neuralsignal/obsidian-export/issues/291)) ([f0c3b9c](https://github.com/neuralsignal/obsidian-export/commit/f0c3b9c5a098eacc0bd16e5fe26f82e7bf7de923))
+* raise MermaidRenderError instead of FileNotFoundError for missing mmdc ([#294](https://github.com/neuralsignal/obsidian-export/issues/294)) ([#295](https://github.com/neuralsignal/obsidian-export/issues/295)) ([018a818](https://github.com/neuralsignal/obsidian-export/commit/018a818d83718e3735aaaff328e07656a1f049e6))
+
 ## [0.6.6](https://github.com/neuralsignal/obsidian-export/compare/v0.6.5...v0.6.6) (2026-09-24)
 
 
