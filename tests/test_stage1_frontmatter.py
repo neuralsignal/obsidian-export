@@ -1,6 +1,7 @@
 """Tests for stage1_vault: frontmatter parsing, syntax stripping, and property-based tests."""
 
 import pytest
+import yaml
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
@@ -90,6 +91,14 @@ class TestParseFrontmatter:
             fm, _ = parse_frontmatter(text)
         assert fm["title"] == "Memory: Knowledge folder consolidation"
         assert any("YAML frontmatter parse failed" in msg for msg in caplog.messages)
+
+    def test_yaml_retry_failure_chains_original_exception(self) -> None:
+        """When both YAML attempts fail, the raised error chains the original."""
+        text = "---\n:\n  :\n    - :\n---\nBody."
+        with pytest.raises(yaml.YAMLError) as exc_info:
+            parse_frontmatter(text)
+        assert "auto-quoting colons" in str(exc_info.value)
+        assert exc_info.value.__cause__ is not None
 
 
 # ── clean_frontmatter ────────────────────────────────────────────────────────

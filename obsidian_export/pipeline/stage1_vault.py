@@ -80,9 +80,12 @@ def parse_frontmatter(text: str) -> tuple[dict[str, Any], str]:
     raw = m.group(1)
     try:
         fm = yaml.safe_load(raw) or {}
-    except yaml.YAMLError:
+    except yaml.YAMLError as first_exc:
         _log.warning("YAML frontmatter parse failed, retrying with auto-quoted colons:\n%s", raw)
-        fm = yaml.safe_load(_quote_yaml_values(raw)) or {}
+        try:
+            fm = yaml.safe_load(_quote_yaml_values(raw)) or {}
+        except yaml.YAMLError:
+            raise yaml.YAMLError("YAML frontmatter could not be parsed even after auto-quoting colons") from first_exc
     body = text[m.end() :]
     return fm, body
 

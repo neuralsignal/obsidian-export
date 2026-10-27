@@ -83,8 +83,8 @@ def test_style_config_loaded(tmp_path: Path) -> None:
     assert result.style.footer_left == ""
     assert result.style.footer_center == "\\thepage"
     assert result.style.footer_right == ""
-    assert result.style.logo == ""
-    assert result.style.style_dir == ""
+    assert result.style.logo is None
+    assert result.style.style_dir is None
 
 
 def test_callout_colors_loaded(tmp_path: Path) -> None:

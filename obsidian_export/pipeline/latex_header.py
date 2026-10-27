@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from obsidian_export.config import HeadingStyle, StyleConfig, TitleStyle
+from obsidian_export.config import CalloutColors, HeadingStyle, StyleConfig, TitleStyle
 from obsidian_export.pipeline.latex_escape import (
     escape_latex,
     substitute_placeholders,
@@ -31,7 +31,7 @@ def render_header(style: StyleConfig, template_path: Path, title: str) -> str:
     template = template_path.read_text(encoding="utf-8")
 
     # Logo path is now resolved to absolute during config loading
-    logo_path = style.logo if style.logo else ""
+    logo_path = str(style.logo) if style.logo else ""
     hf_values = {
         field: substitute_placeholders(getattr(style, field), title, logo_path) for field in _HEADER_FOOTER_LATEX_CMDS
     }
@@ -46,21 +46,9 @@ def render_header(style: StyleConfig, template_path: Path, title: str) -> str:
     title_style_block = _build_title_style_block(style.title_style)
     code_block = _build_code_block(style.code_fontsize)
 
-    cc = style.callout_colors
     return template.format(
         image_max_height_ratio=style.image_max_height_ratio,
-        note_r=cc.note[0],
-        note_g=cc.note[1],
-        note_b=cc.note[2],
-        tip_r=cc.tip[0],
-        tip_g=cc.tip[1],
-        tip_b=cc.tip[2],
-        warn_r=cc.warning[0],
-        warn_g=cc.warning[1],
-        warn_b=cc.warning[2],
-        danger_r=cc.danger[0],
-        danger_g=cc.danger[1],
-        danger_b=cc.danger[2],
+        **_callout_color_args(style.callout_colors),
         unicode_char_block=unicode_char_block,
         font_block=font_block,
         greek_fallback_block=greek_fallback_block,
@@ -71,6 +59,14 @@ def render_header(style: StyleConfig, template_path: Path, title: str) -> str:
         title_style_block=title_style_block,
         code_block=code_block,
     )
+
+
+def _callout_color_args(cc: CalloutColors) -> dict[str, int]:
+    """Flatten CalloutColors into template-ready keyword args."""
+    result: dict[str, int] = {}
+    for name, rgb in [("note", cc.note), ("tip", cc.tip), ("warn", cc.warning), ("danger", cc.danger)]:
+        result[f"{name}_r"], result[f"{name}_g"], result[f"{name}_b"] = rgb
+    return result
 
 
 def _build_unicode_char_block(unicode_chars: tuple[tuple[str, str], ...]) -> str:

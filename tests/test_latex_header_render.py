@@ -4,9 +4,11 @@ import dataclasses
 from pathlib import Path
 
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 
 from obsidian_export.config import CalloutColors, StyleConfig, default_config
-from obsidian_export.pipeline.latex_header import render_header
+from obsidian_export.pipeline.latex_header import _callout_color_args, render_header
 
 DEFAULT_TEMPLATE = Path(__file__).parent.parent / "obsidian_export" / "assets" / "styles" / "default" / "header.tex"
 
@@ -104,7 +106,7 @@ class TestRenderHeader:
         )
         style = _make_style(
             footer_center="\\includegraphics{{logo_path}}",
-            logo="my_logo.png",
+            logo=Path("my_logo.png"),
         )
         result = render_header(style, template, "Test")
         assert "\\includegraphics{" in result
@@ -146,3 +148,42 @@ class TestRenderHeader:
         result = render_header(style, template, "Test Doc")
         assert "ratio=0.4" in result
         assert "note=219,234,254" in result
+
+
+rgb_channel = st.integers(min_value=0, max_value=255)
+rgb_tuple = st.tuples(rgb_channel, rgb_channel, rgb_channel)
+
+
+class TestCalloutColorArgs:
+    def test_returns_expected_keys(self) -> None:
+        cc = CalloutColors(note=(1, 2, 3), tip=(4, 5, 6), warning=(7, 8, 9), danger=(10, 11, 12))
+        result = _callout_color_args(cc)
+        assert result == {
+            "note_r": 1,
+            "note_g": 2,
+            "note_b": 3,
+            "tip_r": 4,
+            "tip_g": 5,
+            "tip_b": 6,
+            "warn_r": 7,
+            "warn_g": 8,
+            "warn_b": 9,
+            "danger_r": 10,
+            "danger_g": 11,
+            "danger_b": 12,
+        }
+
+    @given(note=rgb_tuple, tip=rgb_tuple, warning=rgb_tuple, danger=rgb_tuple)
+    def test_always_produces_12_keys(
+        self,
+        note: tuple[int, int, int],
+        tip: tuple[int, int, int],
+        warning: tuple[int, int, int],
+        danger: tuple[int, int, int],
+    ) -> None:
+        cc = CalloutColors(note=note, tip=tip, warning=warning, danger=danger)
+        result = _callout_color_args(cc)
+        assert len(result) == 12
+        for suffix in ("_r", "_g", "_b"):
+            for prefix in ("note", "tip", "warn", "danger"):
+                assert f"{prefix}{suffix}" in result

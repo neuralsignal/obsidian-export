@@ -74,8 +74,8 @@ class StyleConfig:
     footer_right: str
     callout_colors: CalloutColors
     unicode_chars: tuple[tuple[str, str], ...]
-    logo: str
-    style_dir: str
+    logo: Path | None
+    style_dir: Path | None
     brand_colors: tuple[tuple[str, int, int, int], ...]
     heading_styles: tuple[HeadingStyle, ...]
     title_style: TitleStyle | None
