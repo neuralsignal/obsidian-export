@@ -104,7 +104,7 @@ class TestRenderHeader:
         )
         style = _make_style(
             footer_center="\\includegraphics{{logo_path}}",
-            logo="my_logo.png",
+            logo=Path("my_logo.png"),
         )
         result = render_header(style, template, "Test")
         assert "\\includegraphics{" in result

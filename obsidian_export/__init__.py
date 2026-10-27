@@ -36,7 +36,7 @@ def _resolve_style_dir(style: StyleConfig) -> Path:
     """
     # Explicit style_dir override
     if style.style_dir:
-        candidate = Path(style.style_dir)
+        candidate = style.style_dir
         if candidate.is_dir():
             return candidate
         raise FileNotFoundError(f"Style dir not found: {style.style_dir!r}")

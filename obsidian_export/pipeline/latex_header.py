@@ -31,7 +31,7 @@ def render_header(style: StyleConfig, template_path: Path, title: str) -> str:
     template = template_path.read_text(encoding="utf-8")
 
     # Logo path is now resolved to absolute during config loading
-    logo_path = style.logo if style.logo else ""
+    logo_path = str(style.logo) if style.logo else ""
     hf_values = {
         field: substitute_placeholders(getattr(style, field), title, logo_path) for field in _HEADER_FOOTER_LATEX_CMDS
     }

@@ -46,7 +46,7 @@ def test_logo_field_loaded(tmp_path: Path) -> None:
     data["style"] = {**VALID_DATA["style"], "logo": "brand_logo.png"}
     cfg = write_config(tmp_path, data)
     result = load_config(cfg)
-    assert result.style.logo == str(tmp_path / "brand_logo.png")
+    assert result.style.logo == tmp_path / "brand_logo.png"
 
 
 def test_unicode_chars_loaded(tmp_path: Path) -> None:
@@ -86,7 +86,7 @@ def test_style_dir_field_loaded(tmp_path: Path) -> None:
     data["style"] = {**VALID_DATA["style"], "style_dir": "/custom/styles/brand"}
     cfg = write_config(tmp_path, data)
     result = load_config(cfg)
-    assert result.style.style_dir == "/custom/styles/brand"
+    assert result.style.style_dir == Path("/custom/styles/brand")
 
 
 # ── brand_colors ───────────────────────────────────────────────────────────
@@ -202,7 +202,7 @@ def test_logo_resolved_to_absolute(tmp_path: Path) -> None:
     data["style"] = {**VALID_DATA["style"], "logo": "images/logo.png"}
     cfg = write_config(tmp_path, data)
     result = load_config(cfg)
-    assert result.style.logo == str(tmp_path / "images/logo.png")
+    assert result.style.logo == tmp_path / "images/logo.png"
 
 
 def test_logo_absolute_preserved(tmp_path: Path) -> None:
@@ -210,4 +210,4 @@ def test_logo_absolute_preserved(tmp_path: Path) -> None:
     data["style"] = {**VALID_DATA["style"], "logo": "/absolute/path/logo.png"}
     cfg = write_config(tmp_path, data)
     result = load_config(cfg)
-    assert result.style.logo == "/absolute/path/logo.png"
+    assert result.style.logo == Path("/absolute/path/logo.png")
