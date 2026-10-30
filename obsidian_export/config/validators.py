@@ -89,6 +89,27 @@ def validate_url_strategy(value: str) -> None:
         raise ConfigValueError(f"Unknown url_strategy: {value!r}. Allowed: {sorted(_VALID_URL_STRATEGIES)}")
 
 
+def validate_rgb_tuple(field_name: str, value: tuple[object, ...]) -> tuple[int, int, int]:
+    """Validate that value is exactly 3 integers in [0, 255].
+
+    Returns the validated tuple. Raises ConfigValueError on invalid input.
+    """
+    if len(value) != 3:
+        raise ConfigValueError(
+            f"Config field '{field_name}' must have exactly 3 elements (R, G, B); got {len(value)}: {list(value)}"
+        )
+    result: list[int] = []
+    for i, component in enumerate(value):
+        if not isinstance(component, int) or isinstance(component, bool):
+            raise ConfigValueError(
+                f"Config field '{field_name}[{i}]' must be an integer; got {type(component).__name__}: {component!r}"
+            )
+        if component < 0 or component > 255:
+            raise ConfigValueError(f"Config field '{field_name}[{i}]' must be in [0, 255]; got {component}")
+        result.append(component)
+    return (result[0], result[1], result[2])
+
+
 def validate_pandoc_variable(name: str, value: str) -> None:
     """Validate a string that will be passed as a pandoc --variable value.
 
