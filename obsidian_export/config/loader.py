@@ -20,6 +20,7 @@ from obsidian_export.config.validators import (
     validate_from_format,
     validate_heading_level,
     validate_pandoc_variable,
+    validate_rgb_tuple,
     validate_url_strategy,
 )
 from obsidian_export.exceptions import ConfigValueError
@@ -47,6 +48,16 @@ def resolve_path(raw_path: str, config_dir: Path | None) -> str:
     if raw_path and config_dir and not Path(raw_path).is_absolute():
         return str((config_dir / raw_path).resolve())
     return raw_path
+
+
+def parse_callout_colors(raw: dict[str, Any]) -> CalloutColors:
+    """Parse and validate callout_colors dict into CalloutColors."""
+    return CalloutColors(
+        note=validate_rgb_tuple("callout_colors.note", tuple(raw["note"])),
+        tip=validate_rgb_tuple("callout_colors.tip", tuple(raw["tip"])),
+        warning=validate_rgb_tuple("callout_colors.warning", tuple(raw["warning"])),
+        danger=validate_rgb_tuple("callout_colors.danger", tuple(raw["danger"])),
+    )
 
 
 def parse_brand_colors(raw: dict[str, Any]) -> tuple[tuple[str, int, int, int], ...]:
@@ -115,7 +126,6 @@ def build_mermaid_config(raw: dict[str, Any], config_dir: Path | None) -> Mermai
 
 def build_style_config(raw: dict[str, Any], config_dir: Path | None) -> StyleConfig:
     """Build StyleConfig from raw style dict."""
-    cc_raw = raw["callout_colors"]
     return StyleConfig(
         name=raw["name"],
         geometry=raw["geometry"],
@@ -136,12 +146,7 @@ def build_style_config(raw: dict[str, Any], config_dir: Path | None) -> StyleCon
         footer_left=raw["footer_left"],
         footer_center=raw["footer_center"],
         footer_right=raw["footer_right"],
-        callout_colors=CalloutColors(
-            note=tuple(cc_raw["note"]),
-            tip=tuple(cc_raw["tip"]),
-            warning=tuple(cc_raw["warning"]),
-            danger=tuple(cc_raw["danger"]),
-        ),
+        callout_colors=parse_callout_colors(raw["callout_colors"]),
         unicode_chars=parse_unicode_chars(raw.get("unicode_chars", {})),
         logo=Path(resolve_path(raw["logo"], config_dir)) if raw["logo"] else None,
         style_dir=Path(resolve_path(raw["style_dir"], config_dir)) if raw["style_dir"] else None,
