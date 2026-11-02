@@ -19,7 +19,7 @@ packaging = ">=26.3,<27"
 obsidian-export = {path = ".", editable = true}
 pyyaml = ">=6.0,<7"
 click = ">=8.0,<9"
-pillow = ">=12.3.0,<13"
+pillow = ">=13.0.0,<14"
 certifi = ">=2026.10.19"
 urllib3 = ">=2.8.0,<3"
 idna = ">=3.15,<4"
