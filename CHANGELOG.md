@@ -10,6 +10,10 @@
 
 * `style.heading_styles` entries and `style.title_style` now require every field to be present. Previously `bold`, `sans`, `color`, `uppercase`, `date_visible`, and `vskip_after` fell back to hardcoded defaults in the parser; a missing field now raises `ConfigValueError` naming the field. `title_style` may still be omitted or `null` to keep the default title block ([#253](https://github.com/neuralsignal/obsidian-export/issues/253))
 
+### Bug Fixes
+
+* validate `callout_colors` RGB tuples at config load time; malformed tuples (wrong length, out-of-range, non-integer) now raise `ConfigValueError` instead of silently producing wrong output ([#309](https://github.com/neuralsignal/obsidian-export/issues/309))
+
 ### Security
 
 * pin urllib3 `>=2.7.0,<3` to fix CVE-2026-44431 (sensitive headers forwarded on cross-origin proxy redirects) ([#193](https://github.com/neuralsignal/obsidian-export/issues/193))
