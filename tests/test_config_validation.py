@@ -1,4 +1,4 @@
-"""Tests for config validation: validate_from_format, validate_pandoc_variable, validate_url_strategy."""
+"""Tests for config validation: validate_from_format, validate_pandoc_variable, validate_url_strategy, validate_rgb_tuple."""
 
 from pathlib import Path
 
@@ -13,7 +13,7 @@ from obsidian_export.config import (
     validate_pandoc_variable,
     validate_url_strategy,
 )
-from obsidian_export.config.validators import _validate_pandoc_extensions
+from obsidian_export.config.validators import _validate_pandoc_extensions, validate_rgb_tuple
 from obsidian_export.exceptions import ConfigValueError
 
 # ── _validate_pandoc_extensions ─────────────────────────────────────────
@@ -211,3 +211,100 @@ class TestValidateUrlStrategyIntegration:
         cfg = write_config(tmp_path, data)
         result = load_config(cfg)
         assert result.obsidian.url_strategy == "keep"
+
+
+# ── validate_rgb_tuple ────────────────────────────────────────────────
+
+
+class TestValidateRgbTuple:
+    def test_valid_tuple_accepted(self) -> None:
+        result = validate_rgb_tuple("test", (0, 128, 255))
+        assert result == (0, 128, 255)
+
+    def test_boundary_values_accepted(self) -> None:
+        assert validate_rgb_tuple("test", (0, 0, 0)) == (0, 0, 0)
+        assert validate_rgb_tuple("test", (255, 255, 255)) == (255, 255, 255)
+
+    def test_too_few_elements_rejected(self) -> None:
+        with pytest.raises(ConfigValueError, match="exactly 3 elements.*got 2"):
+            validate_rgb_tuple("callout_colors.note", (255, 0))
+
+    def test_too_many_elements_rejected(self) -> None:
+        with pytest.raises(ConfigValueError, match="exactly 3 elements.*got 4"):
+            validate_rgb_tuple("callout_colors.note", (255, 0, 0, 0))
+
+    def test_empty_tuple_rejected(self) -> None:
+        with pytest.raises(ConfigValueError, match="exactly 3 elements.*got 0"):
+            validate_rgb_tuple("callout_colors.tip", ())
+
+    def test_negative_value_rejected(self) -> None:
+        with pytest.raises(ConfigValueError, match=r"must be in \[0, 255\].*-1"):
+            validate_rgb_tuple("callout_colors.warning", (255, -1, 0))
+
+    def test_value_above_255_rejected(self) -> None:
+        with pytest.raises(ConfigValueError, match=r"must be in \[0, 255\].*256"):
+            validate_rgb_tuple("callout_colors.danger", (256, 0, 0))
+
+    def test_float_value_rejected(self) -> None:
+        with pytest.raises(ConfigValueError, match="must be an integer.*float"):
+            validate_rgb_tuple("callout_colors.note", (1.5, 0, 0))
+
+    def test_string_value_rejected(self) -> None:
+        with pytest.raises(ConfigValueError, match="must be an integer.*str"):
+            validate_rgb_tuple("callout_colors.note", ("red", 0, 0))
+
+    def test_bool_value_rejected(self) -> None:
+        with pytest.raises(ConfigValueError, match="must be an integer.*bool"):
+            validate_rgb_tuple("callout_colors.note", (True, 0, 0))
+
+    @given(
+        r=st.integers(min_value=0, max_value=255),
+        g=st.integers(min_value=0, max_value=255),
+        b=st.integers(min_value=0, max_value=255),
+    )
+    def test_valid_rgb_always_accepted(self, r: int, g: int, b: int) -> None:
+        result = validate_rgb_tuple("test", (r, g, b))
+        assert result == (r, g, b)
+
+    @given(bad=st.integers().filter(lambda x: x < 0 or x > 255))
+    def test_out_of_range_always_rejected(self, bad: int) -> None:
+        with pytest.raises(ConfigValueError):
+            validate_rgb_tuple("test", (bad, 0, 0))
+
+
+class TestCalloutColorsIntegration:
+    """Verify that load_config rejects invalid callout color tuples."""
+
+    def test_load_config_rejects_too_many_elements(self, tmp_path: Path) -> None:
+        partial = {"style": {"callout_colors": {"note": [255, 0, 0, 0]}}}
+        cfg = write_config(tmp_path, partial)
+        with pytest.raises(ConfigValueError, match="callout_colors.note.*exactly 3"):
+            load_config(cfg)
+
+    def test_load_config_rejects_too_few_elements(self, tmp_path: Path) -> None:
+        partial = {"style": {"callout_colors": {"tip": [255, 0]}}}
+        cfg = write_config(tmp_path, partial)
+        with pytest.raises(ConfigValueError, match="callout_colors.tip.*exactly 3"):
+            load_config(cfg)
+
+    def test_load_config_rejects_out_of_range(self, tmp_path: Path) -> None:
+        partial = {"style": {"callout_colors": {"warning": [256, 0, 0]}}}
+        cfg = write_config(tmp_path, partial)
+        with pytest.raises(ConfigValueError, match=r"callout_colors\.warning\[0\].*\[0, 255\]"):
+            load_config(cfg)
+
+    def test_load_config_accepts_valid_callout_colors(self, tmp_path: Path) -> None:
+        partial = {
+            "style": {
+                "callout_colors": {
+                    "note": [10, 20, 30],
+                    "tip": [40, 50, 60],
+                    "warning": [70, 80, 90],
+                    "danger": [100, 110, 120],
+                }
+            }
+        }
+        cfg = write_config(tmp_path, partial)
+        result = load_config(cfg)
+        assert result.style.callout_colors.note == (10, 20, 30)
+        assert result.style.callout_colors.danger == (100, 110, 120)
