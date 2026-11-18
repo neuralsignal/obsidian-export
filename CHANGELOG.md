@@ -24,6 +24,13 @@
 * bump Pillow pin to `>=12.3.0,<13` to fix 5 known vulnerabilities in 12.2.0 ([#236](https://github.com/neuralsignal/obsidian-export/issues/236))
 * bump pymdown-extensions pin to `>=11.0.0,<12` to fix CVE-2026-61632 ([#248](https://github.com/neuralsignal/obsidian-export/issues/248))
 
+## [0.7.0](https://github.com/neuralsignal/obsidian-export/compare/v0.6.8...v0.7.0) (2026-11-18)
+
+
+### Features
+
+* review and merge Dependabot updates ([#322](https://github.com/neuralsignal/obsidian-export/issues/322)) ([46a003f](https://github.com/neuralsignal/obsidian-export/commit/46a003ff77a1646f9f365d096d0a4649616bec3c))
+
 ## [0.6.8](https://github.com/neuralsignal/obsidian-export/compare/v0.6.7...v0.6.8) (2026-11-07)
 
 
